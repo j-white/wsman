@@ -1,0 +1,93 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <parent>
+    <groupId>org.opennms</groupId>
+    <artifactId>wsman</artifactId>
+    <version>1.0-SNAPSHOT</version>
+  </parent>
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.opennms.wsman</groupId>
+  <artifactId>org.opennms.wsman.client</artifactId>
+  <packaging>jar</packaging>
+  
+  <properties>
+    <cxf.version>2.2.3</cxf.version>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+         <groupId>org.apache.cxf</groupId>
+         <artifactId>cxf-codegen-plugin</artifactId>
+         <version>${cxf.version}</version>
+         <executions>
+             <execution>
+                 <id>generate-sources</id>
+                 <phase>generate-sources</phase>
+                 <configuration>
+                     <wsdlOptions>
+                         <wsdlOption>
+                             <wsdl>${basedir}/src/main/resources/ws-man-enumeration-ops-v1.0.0.wsdl</wsdl>
+                         </wsdlOption>
+                         <wsdlOption>
+                             <wsdl>${basedir}/src/main/resources/ws-man-resource-access-ops-v1.0.0.wsdl</wsdl>
+                         </wsdlOption>
+                         <wsdlOption>
+                             <wsdl>${basedir}/src/main/resources/ws-man-notifications-ops-v1.0.0.wsdl</wsdl>
+                         </wsdlOption>
+                     </wsdlOptions>
+                 </configuration>
+                 <goals>
+                     <goal>wsdl2java</goal>
+                 </goals>
+             </execution>
+         </executions>
+     </plugin>
+     <plugin>
+         <groupId>org.codehaus.mojo</groupId>
+         <artifactId>build-helper-maven-plugin</artifactId>
+         <version>1.10</version>
+         <executions>
+             <execution>
+                 <id>add-source</id>
+                 <phase>generate-sources</phase>
+                 <goals>
+                     <goal>add-source</goal>
+                 </goals>
+                 <configuration>
+                     <sources>
+                         <source>${project.build.directory}/generated-sources/cxf/</source>
+                     </sources>
+                 </configuration>
+             </execution>
+         </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+
+  <dependencies>
+      <dependency>
+          <groupId>org.apache.cxf</groupId>
+          <artifactId>cxf-rt-frontend-jaxws</artifactId>
+          <version>${cxf.version}</version>
+      </dependency>
+      <dependency>
+          <groupId>org.apache.cxf</groupId>
+          <artifactId>cxf-rt-transports-http</artifactId>
+          <version>${cxf.version}</version>
+      </dependency>
+          <!-- Jetty is needed if you're are not using the CXFServlet -->
+      <dependency>
+          <groupId>org.apache.cxf</groupId>
+          <artifactId>cxf-rt-transports-http-jetty</artifactId>
+          <version>${cxf.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>3.8.1</version>
+        <scope>test</scope>
+      </dependency>
+  </dependencies>
+</project>

@@ -1,0 +1,12 @@
+# Build/target folders
+build/
+dist/
+tmp/
+target
+
+# Editors
+.idea
+.settings
+.classpath
+.project
+java/bin/
