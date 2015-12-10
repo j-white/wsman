@@ -2,17 +2,17 @@
 <!-- 
 DMTF - Distributed Management Task Force, Inc. - http://www.dmtf.org
 
-Document number: DSP8035
+Document number: DSP8037
 Date: 2010-02-19
 Version: 1.0.0
 Document status: DMTF Standard
 
-Title: WS-Management Resource Access Operations WSDL
+Title: WS-Management Enumeration Operations WSDL
 
 Document type: Specification (W3C WSDL Document)
 Document language: E
 
-Abstract: WSDL for WS-Management Resource Access Operations.
+Abstract: WSDL for WS-Management Enumeration Operations.
 
 Contact group: DMTF WS-Management Work Group, wsman-chair@dmtf.org
 
@@ -51,101 +51,127 @@ Change log:
 1.0.0 - 2009-11-01 - Work in progress release
 1.0.0 - 2010-02-19 - DMTF Standard release
   -->
-<wsdl:definitions 
-    targetNamespace="http://schemas.xmlsoap.org/ws/2004/09/transfer" 
-    xmlns:tns="http://schemas.xmlsoap.org/ws/2004/09/transfer" 
+<wsdl:definitions
+    targetNamespace="http://schemas.xmlsoap.org/ws/2004/09/enumeration" 
     xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" 
 	  xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata"
     xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
-    xmlns:xs="http://www.w3.org/2001/XMLSchema">
- 
+    xmlns:wsmen="http://schemas.xmlsoap.org/ws/2004/09/enumeration"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema" >
+
   <wsdl:types>
     <xs:schema>
-      <xs:import 
-        namespace="http://schemas.xmlsoap.org/ws/2004/09/transfer"
-        schemaLocation="http://schemas.dmtf.org/wbem/wsman/1/dsp8031_1.0.xsd"
+      <xs:import
+        namespace="http://schemas.xmlsoap.org/ws/2004/09/enumeration"
+        schemaLocation="http://schemas.dmtf.org/wbem/wsman/1/dsp8033_1.0.xsd" 
         />
     </xs:schema>
   </wsdl:types>
 
-  <!--
-  In some of the messages defined below a "tns:TransferElement"
-  is expected to be inserted before the WSDL is processed by any tooling.
-  Thus the WSDL as presented is not usable until after this substitution
-  is done.
-  -->
- 
-  <wsdl:message name="EmptyMessage"/>
-  <wsdl:message name="CreateRequestMessage">
-    <wsdl:part name="Body" element="tns:TransferElement"/>
+  <wsdl:message name="EnumerateMessage">
+    <wsdl:part name="Body" element="wsmen:Enumerate" />
   </wsdl:message>
-  <wsdl:message name="CreateResponseMessage">
-    <wsdl:part name="Body" element="tns:ResourceCreated"/>
+  <wsdl:message name="EnumerateResponseMessage">
+    <wsdl:part name="Body" element="wsmen:EnumerateResponse" />
   </wsdl:message>
-  <wsdl:message name="GetResponseMessage">
-    <wsdl:part name="Body" element="tns:TransferElement"/>
+  <wsdl:message name="PullMessage">
+    <wsdl:part name="Body" element="wsmen:Pull" />
   </wsdl:message>
-  <wsdl:message name="PutRequestMessage">
-    <wsdl:part name="Body" element="tns:TransferElement"/>
+  <wsdl:message name="PullResponseMessage">
+    <wsdl:part name="Body" element="wsmen:PullResponse" />
   </wsdl:message>
-  <wsdl:message name="PutResponseMessage">
-    <!-- Note this 'part' may be omitted -->
-    <wsdl:part name="Body" element="tns:TransferElement"/>
+  <wsdl:message name="RenewMessage" >
+    <wsdl:part name="Body" element="wsmen:Renew" />
   </wsdl:message>
- 
-  <wsdl:portType name="Resource">
-    <wsdl:documentation>
-      This port type defines a resource that may be read, 
-      written, and deleted.
-    </wsdl:documentation>
-    <wsdl:operation name="Get">
+  <wsdl:message name="RenewResponseMessage" >
+    <wsdl:part name="Body" element="wsmen:RenewResponse" />
+  </wsdl:message>
+  <wsdl:message name="GetStatusMessage" >
+    <wsdl:part name="Body" element="wsmen:GetStatus" />
+  </wsdl:message>
+  <wsdl:message name="GetStatusResponseMessage" >
+    <wsdl:part name="Body" element="wsmen:GetStatusResponse" />
+  </wsdl:message>
+  <wsdl:message name="ReleaseMessage">
+    <wsdl:part name="Body" element="wsmen:Release" />
+  </wsdl:message>
+  <wsdl:message name="ReleaseResponseMessage" />
+  <wsdl:message name="EnumerationEndMessage" >
+    <wsdl:part name="Body" element="wsmen:EnumerationEnd" />
+  </wsdl:message>
+  
+  <wsdl:portType name="DataSource">
+    <wsdl:operation name="EnumerateOp">
       <wsdl:input 
-        message="tns:EmptyMessage"
-        wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Get"
-        wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Get" />
+        message="wsmen:EnumerateMessage"
+     wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate"
+     wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate"
+        />
       <wsdl:output 
-        message="tns:GetResponseMessage"
-        wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/GetResponse" 
-        wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/GetResponse" />
+        message="wsmen:EnumerateResponseMessage" 
+        wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/EnumerateResponse"
+        wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/EnumerateResponse"
+       />
     </wsdl:operation>
-    <wsdl:operation name="Put">
+    <wsdl:operation name="PullOp">
       <wsdl:input 
-        message="tns:PutRequestMessage"
-        wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Put" 
-        wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Put" />
+        message="wsmen:PullMessage"
+        wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Pull"
+        wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Pull"
+        />
       <wsdl:output 
-        message="tns:PutResponseMessage"
-   wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/PutResponse"
-   wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/PutResponse"/>
+        message="wsmen:PullResponseMessage" 
+   wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/PullResponse"
+  wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/PullResponse"
+        />
     </wsdl:operation>
-    <wsdl:operation name="Delete">
+    <wsdl:operation name="RenewOp" >
       <wsdl:input 
-        message="tns:EmptyMessage"
-        wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete" 
-        wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Delete" />
+        message="wsmen:RenewMessage" 
+        wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Renew"
+       wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Renew"
+        />
       <wsdl:output 
-        message="tns:EmptyMessage"
-    wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/DeleteResponse"
-   wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/DeleteResponse" 
-      />
+        message="wsmen:RenewResponseMessage" 
+ wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/RenewResponse"
+wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/RenewResponse"
+        />
+    </wsdl:operation>
+    <wsdl:operation name="GetStatusOp" >
+      <wsdl:input 
+        message="wsmen:GetStatusMessage" 
+     wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/GetStatus"
+    wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/GetStatus"
+        />
+      <wsdl:output 
+        message="wsmen:GetStatusResponseMessage" 
+        wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/GetStatusResponse"
+wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/GetStatusResponse"
+        />
+    </wsdl:operation>
+    <wsdl:operation name="ReleaseOp">
+      <wsdl:input 
+        message="wsmen:ReleaseMessage"
+     wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Release"
+    wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Release"
+        />
+      <wsdl:output 
+        message="wsmen:ReleaseResponseMessage" 
+wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/ReleaseResponse"
+wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/ReleaseResponse"
+        />
     </wsdl:operation>
   </wsdl:portType>
- 
-  <wsdl:portType name="ResourceFactory">
-    <wsdl:documentation>
-      This port type defines a Web service that can create new 
-      resources.
-    </wsdl:documentation>
-    <wsdl:operation name="Create">
+
+  <!-- The following portType shall be supported by the endpoint to which
+       The EnumerationEnd message is sent -->
+  <wsdl:portType name="EnumEndEndpoint">
+    <wsdl:operation name="EnumerationEndOp" >
       <wsdl:input 
-        message="tns:CreateRequestMessage"
-        wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Create" 
-        wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/Create" />
-      <wsdl:output 
-        message="tns:CreateResponseMessage"
-    wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/CreateResponse"
-   wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/transfer/CreateResponse"
-      />
+        message="wsmen:EnumerationEndMessage" 
+        wsa:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/EnumerationEnd"
+wsam:Action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/EnumerationEnd"
+        />
     </wsdl:operation>
   </wsdl:portType>
 </wsdl:definitions>
