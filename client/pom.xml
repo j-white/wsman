@@ -135,6 +135,11 @@
          <scope>system</scope>
          <systemPath>${project.basedir}/src/main/resources/openwsman-x86_64-2.6.2.jar</systemPath>
      </dependency>
+     <dependency>
+         <groupId>com.mycila</groupId>
+         <artifactId>mycila-xmltool</artifactId>
+         <version>4.4.ga</version>
+     </dependency>
     <dependency>
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>

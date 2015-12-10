@@ -2,6 +2,7 @@ package org.opennms;
 
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,6 +50,9 @@ public class WSManCxfClient {
         JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
         factory.setServiceClass(EnumerationOperations.class);
         factory.setAddress(String.format("%s://%s:%d%s", protocol, hostname, port, url));
+
+        // Force the client to use SOAP v1.2, as per:
+        // R13.1-1: A service shall at least receive and send SOAP 1.2 SOAP Envelopes.
         factory.setBindingId("http://schemas.xmlsoap.org/wsdl/soap12/");
         EnumerationOperations enumerator = factory.create(EnumerationOperations.class);
         
@@ -98,6 +102,14 @@ public class WSManCxfClient {
         nsMap.put("wsen", "http://schemas.xmlsoap.org/ws/2004/09/enumeration");
         nsMap.put("wsman", "http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd");
         cxfClient.getRequestContext().put("soap.env.ns.map", nsMap);
+
+        // The iDrac card I'm working work doesn't support the "http://www.w3.org/2005/08/addressing"
+        // namespace for WS-Addressing that CXF uses by default, so we need to change this to "http://schemas.xmlsoap.org/ws/2004/08/addressing"
+        Map<String, String> outTransformMap = Collections.singletonMap("{http://www.w3.org/2005/08/addressing}*", "{http://schemas.xmlsoap.org/ws/2004/08/addressing}*");
+        org.apache.cxf.interceptor.transform.TransformOutInterceptor transformOutInterceptor =
+            new org.apache.cxf.interceptor.transform.TransformOutInterceptor();
+        transformOutInterceptor.setOutTransformElements(outTransformMap);
+        cxfClient.getOutInterceptors().add(transformOutInterceptor);
 
         return enumerator;
     }

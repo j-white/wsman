@@ -3,16 +3,19 @@ package org.opennms;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-import org.xmlsoap.schemas.ws._2004._09.enumeration.FilterType;
+import org.opennms.wsman.Enumerate;
+import org.opennms.wsman.FilterType;
+import org.w3c.dom.Node;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.ItemListType;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.Pull;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;
-import org.xmlsoap.schemas.ws._2004._09.enumeration.Enumerate;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerateResponse;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerationContextType;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.github.tomakehurst.wiremock.verification.LoggedRequest;
+import com.mycila.xmltool.XMLDoc;
+import com.mycila.xmltool.XMLTag;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.Assert.assertEquals;
@@ -76,9 +79,18 @@ public class WSManIT {
         pull.setEnumerationContext(enumContextType);
 
         PullResponse pullResponse = client.getEnumerator().pull(pull);
+        
+        List<LoggedRequest> requests = findAll(postRequestedFor(urlMatching("/.*")));
+        for (LoggedRequest r : requests) {
+            System.out.println(prettyFormat(r.getBodyAsString(), 4));
+        }
+
         ItemListType itemList = pullResponse.getItems();
-        // Note: Items in list is of type com.sun.org.apache.xerces.internal.dom.ElementNSImpl
         assertEquals(1, itemList.getAny().size());
+        
+        XMLTag tag = XMLDoc.from((Node)itemList.getAny().get(0), true);
+        int inputVoltage = Integer.valueOf(tag.gotoChild("n1:InputVoltage").getText());
+        assertEquals(120, inputVoltage);
     }
 
     public static String prettyFormat(String input, int indent) {

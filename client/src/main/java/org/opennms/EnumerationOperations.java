@@ -8,21 +8,24 @@ import javax.xml.ws.Action;
 import javax.xml.ws.BindingType;
 import javax.xml.ws.soap.Addressing;
 
-import org.xmlsoap.schemas.ws._2004._09.enumeration.Enumerate;
+import org.opennms.wsman.Enumerate;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerateResponse;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.Pull;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;
 
 @SOAPBinding(parameterStyle = SOAPBinding.ParameterStyle.BARE)
 @BindingType(value="http://www.w3.org/2003/05/soap/bindings/HTTP/")
-@Addressing(required = true, enabled = true)
-@WebService(targetNamespace = "http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate")
+//FIXME: We should make addressing required, but we disable it since we can't currently
+// mock the RelatesTo and MessageID headers in tests
+@Addressing(required = false, enabled = true)
+@WebService(targetNamespace = "http://schemas.xmlsoap.org/ws/2004/09/enumeration")
 public interface EnumerationOperations {
 
         @WebResult(name = "EnumerateResponse", 
             targetNamespace = "http://schemas.xmlsoap.org/ws/2004/09/enumeration", 
-            partName = "body", header=true)
-        @Action(input = "http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate")
+            partName = "body")
+        @Action(input = "http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate",
+                output = "http://schemas.xmlsoap.org/ws/2004/09/enumeration/EnumerateResponse")
         @WebMethod(operationName = "Enumerate")
         public EnumerateResponse enumerate(Enumerate enumerate);
 
