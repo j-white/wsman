@@ -12,7 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openwsman.Client;
 
-public class OpenmWSManClientTest {
+public class OpenWSManTest {
 
     private String hostname;
     private int port;
@@ -28,8 +28,8 @@ public class OpenmWSManClientTest {
             prop.load(input);
             hostname = prop.getProperty("hostname" , "127.0.0.1");
             port = Integer.valueOf(prop.getProperty("port", "443"));
-            protocol = prop.getProperty("url" , "https");
-            protocol = prop.getProperty("protocol" , "/wsman");
+            protocol = prop.getProperty("protocol" , "https");
+            url = prop.getProperty("url" , "/wsman");
             username = prop.getProperty("username" , "admin");
             password = prop.getProperty("password" , "admin");
         }

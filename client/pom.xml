@@ -66,11 +66,32 @@
                  <configuration>
                      <sources>
                          <source>${project.build.directory}/generated-sources/cxf/</source>
+                         <source>${project.build.directory}/generated-sources/xjc/</source>
                      </sources>
                  </configuration>
              </execution>
          </executions>
       </plugin>
+       <!-- JAXB xjc plugin that invokes the xjc compiler to compile XML schema into Java classes.-->
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>jaxb2-maven-plugin</artifactId>
+            <version>2.2</version>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>xjc</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <configuration>
+                 <sources>
+                    <source>src/main/resources/xsds</source>
+                </sources>
+                <packageName>com.wsman</packageName>
+                <outputDirectory>${project.build.directory}/generated-sources/xjc/</outputDirectory>
+            </configuration>
+        </plugin>
     </plugins>
   </build>
 
@@ -101,6 +122,11 @@
      	<groupId>org.apache.cxf</groupId>
      	<artifactId>cxf-rt-transports-local</artifactId>
      	<version>${cxf.version}</version>
+     </dependency>
+     <dependency>
+         <groupId>org.apache.cxf</groupId>
+         <artifactId>cxf-rt-ws-addr</artifactId>
+         <version>${cxf.version}</version>
      </dependency>
      <dependency>
          <groupId>openwsman</groupId>

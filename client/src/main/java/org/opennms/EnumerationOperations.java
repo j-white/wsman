@@ -15,15 +15,14 @@ import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;
 
 @SOAPBinding(parameterStyle = SOAPBinding.ParameterStyle.BARE)
 @BindingType(value="http://www.w3.org/2003/05/soap/bindings/HTTP/")
-@Addressing(required = false, enabled = false)
-@WebService(targetNamespace = "http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd")
+@Addressing(required = true, enabled = true)
+@WebService(targetNamespace = "http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate")
 public interface EnumerationOperations {
 
         @WebResult(name = "EnumerateResponse", 
             targetNamespace = "http://schemas.xmlsoap.org/ws/2004/09/enumeration", 
-            partName = "body")
-        @Action(input = "http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate",
-            output = "http://schemas.xmlsoap.org/ws/2004/09/enumeration/GetResponse")
+            partName = "body", header=true)
+        @Action(input = "http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate")
         @WebMethod(operationName = "Enumerate")
         public EnumerateResponse enumerate(Enumerate enumerate);
 
