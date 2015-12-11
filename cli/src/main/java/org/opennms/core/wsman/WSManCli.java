@@ -15,9 +15,7 @@ import org.opennms.core.wsman.cxf.CXFWSManClientFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
-
-import com.mycila.xmltool.XMLDoc;
-import com.mycila.xmltool.XMLTag;
+import org.w3c.dom.NodeList;
 
 public class WSManCli {
     private static Logger LOG = LoggerFactory.getLogger(WSManCli.class);
@@ -36,6 +34,9 @@ public class WSManCli {
 
     @Option(name="-w", usage="server version")
     WSManVersion serverVersion = WSManVersion.WSMAN_1_2;
+
+    @Option(name="-resourceUri", usage="resource uri")
+    private String resourceUri = WSManConstants.CIM_ALL_AVAILABLE_CLASSES;
 
     @Argument
     private List<String> arguments = new ArrayList<String>();
@@ -84,16 +85,26 @@ public class WSManCli {
         WSManClient client = clientFactory.getClient(endpoint);
 
         for (String wql : arguments) {
-            LOG.info("Enumerating with '{}'...", wql);
-            String contextId = client.enumerate(wql);
+            LOG.info("Enumerating on '{}' with '{}'...", resourceUri, wql);
+            String contextId = client.enumerateWithWQLFilter(wql, resourceUri);
             LOG.info("Pulling with context id '{}'..", contextId);
-            List<Node> nodes = client.pull(contextId);
+            List<Node> nodes = client.pull(contextId, resourceUri);
             LOG.info("Succesfully pulled {} nodes.", nodes.size());
 
+            // Dump the list of nodes to stdout
             for (Node node : nodes) {
-                XMLTag tag = XMLDoc.from(node, true);
-                LOG.info("{}\n\n\n", tag);
-            } 
+                System.out.printf("%s (%s)\n", node.getLocalName(), node.getNamespaceURI());
+                NodeList children = node.getChildNodes();
+                for (int i = 0; i < children.getLength(); i++) {
+                    Node child = children.item(i);
+                    
+                    if (child.getLocalName() == null) {
+                        continue;
+                    }
+
+                    System.out.printf("\t%s = %s\n", child.getLocalName(), child.getTextContent());
+                }
+            }
         }
     }
 }

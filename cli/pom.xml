@@ -84,11 +84,6 @@
       <version>${args4jVersion}</version>
     </dependency>
     <dependency>
-      <groupId>com.mycila</groupId>
-      <artifactId>mycila-xmltool</artifactId>
-      <version>${xmltoolVersion}</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
       <version>${log4jVersion}</version>

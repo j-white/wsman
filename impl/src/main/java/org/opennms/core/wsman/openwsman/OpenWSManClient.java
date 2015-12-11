@@ -67,14 +67,14 @@ public class OpenWSManClient implements WSManClient {
     }
 
     @Override
-    public String enumerate(String wql) {
+    public String enumerateWithWQLFilter(String wql, String resourceUri) {
         final Client client = getClient();
         final ClientOptions options = getClientOptions();
 
         Filter filter = new Filter();
         filter.wql(wql);
 
-        XmlDoc result = client.enumerate(options, filter, OpenWSManConstants.CIM_ALL_AVAILABLE_CLASSES);
+        XmlDoc result = client.enumerate(options, filter, resourceUri);
         if ((result == null) || result.isFault()) {
             throw new WSManException("Enumeration failed: " + ((result != null) ? result.fault().reason() : "?"));
         } else {
@@ -83,11 +83,11 @@ public class OpenWSManClient implements WSManClient {
     }
 
     @Override
-    public List<Node> pull(String contextId) {
+    public List<Node> pull(String contextId, String resourceUri) {
         final Client client = getClient();
         final ClientOptions options = getClientOptions();
 
-        XmlDoc result = client.pull(options, null, OpenWSManConstants.CIM_ALL_AVAILABLE_CLASSES, contextId);
+        XmlDoc result = client.pull(options, null, resourceUri, contextId);
         if ((result == null) || result.isFault()) {
             throw new WSManException("Pull failed: " + ((result != null) ? result.fault().reason() : "?"));
         } else {

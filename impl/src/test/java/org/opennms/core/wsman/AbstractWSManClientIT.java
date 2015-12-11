@@ -64,7 +64,8 @@ public abstract class AbstractWSManClientIT {
                     .withHeader("Content-Type", "Content-Type: application/soap+xml; charset=utf-8")
                     .withBodyFile("enum-response.xml")));
 
-        String contextId = client.enumerate("select DeviceDescription,PrimaryStatus,TotalOutputPower,InputVoltage,Range1MaxInputPower,FirmwareVersion,RedundancyStatus from DCIM_PowerSupplyView where DetailedState != 'Absent' and PrimaryStatus != 0");
+        String contextId = client.enumerateWithWQLFilter("select DeviceDescription,PrimaryStatus,TotalOutputPower,InputVoltage,Range1MaxInputPower,FirmwareVersion,RedundancyStatus from DCIM_PowerSupplyView where DetailedState != 'Absent' and PrimaryStatus != 0",
+                WSManConstants.CIM_ALL_AVAILABLE_CLASSES);
 
         dumpRequestsToStdout();
 
@@ -78,7 +79,7 @@ public abstract class AbstractWSManClientIT {
                     .withHeader("Content-Type", "Content-Type: application/soap+xml; charset=utf-8")
                     .withBodyFile("pull-response.xml")));
 
-        List<Node> nodes = client.pull("c6595ee1-2664-1664-801f-c115cfb5fe14");
+        List<Node> nodes = client.pull("c6595ee1-2664-1664-801f-c115cfb5fe14", WSManConstants.CIM_ALL_AVAILABLE_CLASSES);
 
         dumpRequestsToStdout();
 

@@ -22,6 +22,7 @@ import org.apache.cxf.ws.addressing.AddressingProperties;
 import org.apache.cxf.ws.addressing.AttributedURIType;
 import org.apache.cxf.ws.addressing.EndpointReferenceType;
 import org.opennms.core.wsman.WSManClient;
+import org.opennms.core.wsman.WSManConstants;
 import org.opennms.core.wsman.WSManEndpoint;
 import org.opennms.core.wsman.WSManEndpoint.WSManVersion;
 import org.opennms.core.wsman.WSManException;
@@ -47,7 +48,7 @@ public class CXFWSManClient implements WSManClient {
         m_endpoint = Objects.requireNonNull(endpoint, "endpoint cannot be null");
     }
 
-    public EnumerationOperations getEnumerator() {
+    public EnumerationOperations getEnumerator(String resourceUri) {
         JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
         factory.setServiceClass(EnumerationOperations.class);
         factory.setAddress(m_endpoint.getUrl().toExternalForm());
@@ -116,7 +117,7 @@ public class CXFWSManClient implements WSManClient {
         requestContext.put("javax.xml.ws.addressing.context", maps);
 
         // Add WS-Man ResourceURI to the header
-        AddResourecURIInterceptor interceptor = new AddResourecURIInterceptor("http://schemas.dmtf.org/wbem/wscim/1/*");
+        AddResourecURIInterceptor interceptor = new AddResourecURIInterceptor(WSManConstants.CIM_ALL_AVAILABLE_CLASSES);
         cxfClient.getOutInterceptors().add(interceptor);
 
         // Relocate the Filter element to the WS-Man namespace
@@ -139,20 +140,16 @@ public class CXFWSManClient implements WSManClient {
         return enumerator;
     }
 
-    public EnumerateResponse enumerate(Enumerate enumeration) {
-        return getEnumerator().enumerate(enumeration);
-    }
-
     @Override
-    public String enumerate(String wql) {
+    public String enumerateWithWQLFilter(String wql, String resourceUri) {
         // Enumerate
         FilterType filter = new FilterType();
-        filter.setDialect("http://schemas.microsoft.com/wbem/wsman/1/WQL");
+        filter.setDialect(WSManConstants.XML_NS_WQL_DIALECT);
         filter.getContent().add(wql);
         Enumerate msg = new Enumerate();
         msg.setFilter(filter);
 
-        EnumerateResponse enumResponse = getEnumerator().enumerate(msg);
+        EnumerateResponse enumResponse = getEnumerator(resourceUri).enumerate(msg);
         if (enumResponse == null) {
             throw new WSManException("Enumeration failed. See logs for details.");
         }
@@ -162,13 +159,13 @@ public class CXFWSManClient implements WSManClient {
     }
 
     @Override
-    public List<Node> pull(String contextId) {
+    public List<Node> pull(String contextId, String resourceUri) {
         EnumerationContextType enumContext = new EnumerationContextType();
         enumContext.getContent().add(contextId);
         Pull pull = new Pull();
         pull.setEnumerationContext(enumContext);
 
-        PullResponse pullResponse = getEnumerator().pull(pull);
+        PullResponse pullResponse = getEnumerator(resourceUri).pull(pull);
         if (pullResponse == null) {
             throw new WSManException(String.format("Pull failed for context id: %s. See logs for details.", contextId));
         }
