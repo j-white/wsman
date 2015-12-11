@@ -92,7 +92,8 @@
      <dependency>
          <groupId>com.mycila</groupId>
          <artifactId>mycila-xmltool</artifactId>
-         <version>4.4.ga</version>
+         <version>${xmltoolVersion}</version>
+         <scope>test</scope>
      </dependency>
     <dependency>
         <groupId>junit</groupId>
@@ -110,6 +111,7 @@
       <groupId>com.github.tomakehurst</groupId>
       <artifactId>wiremock</artifactId>
       <version>1.57</version>
+      <scope>test</scope>
   
       <!-- Include everything below here if you have dependency conflicts -->
       <classifier>standalone</classifier>

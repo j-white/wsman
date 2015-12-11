@@ -13,8 +13,8 @@ import org.apache.cxf.interceptor.Fault;
 import org.apache.cxf.jaxb.JAXBDataBinding;
 import org.apache.cxf.phase.Phase;
 
-import schemas.dmtf.org.wbem.wsmanv1.AttributableURI;
-import schemas.dmtf.org.wbem.wsmanv1.ObjectFactory;
+import schemas.dmtf.org.wbem.wsman.v1.AttributableURI;
+import schemas.dmtf.org.wbem.wsman.v1.ObjectFactory;
 
 public class AddResourecURIInterceptor extends AbstractSoapInterceptor {
 

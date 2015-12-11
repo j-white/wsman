@@ -7,10 +7,19 @@
   <version>1.0-SNAPSHOT</version>
   <name>OpenNMS :: Core :: WS-Man</name>
 
+  <modules>
+    <module>api</module>
+    <module>cli</module>
+    <module>impl</module>
+  </modules>
+
   <properties>
     <cxfVersion>3.1.4</cxfVersion>
     <slf4jVersion>1.7.7</slf4jVersion>
     <guavaVersion>17.0</guavaVersion>
+    <args4jVersion>2.32</args4jVersion>
+    <xmltoolVersion>4.4.ga</xmltoolVersion>
+    <log4jVersion>2.5</log4jVersion>
   </properties>
 
   <build>
@@ -34,11 +43,16 @@
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>2.19</version>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>2.6</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.4.2</version>
+      </plugin>
     </plugins>
   </build>
-
-  <modules>
-    <module>api</module>
-    <module>impl</module>
-  </modules>
 </project>

@@ -31,7 +31,7 @@ import org.w3c.dom.ls.LSSerializer;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import wiremock.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 
 import org.openwsman.OpenWSManConstants;
 

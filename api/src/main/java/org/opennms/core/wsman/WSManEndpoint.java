@@ -37,7 +37,7 @@ public class WSManEndpoint {
            this(new URL(Objects.requireNonNull(url, "url cannot be null")));
        }
 
-       public Builder(URL url) throws MalformedURLException {
+       public Builder(URL url) {
            this.url = Objects.requireNonNull(url, "url cannot be null");
        }
 

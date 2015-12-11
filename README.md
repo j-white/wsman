@@ -2,6 +2,10 @@
 
 Prototype code for a pure Java WS-Man collector. 
 
+## TODO
+* Better exception handling
+** When basic authenticaiton fails
+
 ## WS-Man Specifications
 
 The WS-Management specificatons are maintained by the DMTF and made available here: https://www.dmtf.org/standards/wsman
