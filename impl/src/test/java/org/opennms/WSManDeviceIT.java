@@ -71,12 +71,12 @@ public class WSManDeviceIT {
         // Pull the enumerated objects one by one (we could pull them in a single request if we wanted to)
         for (Object content : enumResponse.getEnumerationContext().getContent()) {
             String contentId = (String)content;
-            
+
             EnumerationContextType enumContext = new EnumerationContextType();
             enumContext.getContent().add(contentId);
             Pull pull = new Pull();
             pull.setEnumerationContext(enumContext);
-            
+
             PullResponse pullResponse = client.getEnumerator().pull(pull);
             assertNotNull("pull failed for " + contentId, pullResponse);
 

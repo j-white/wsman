@@ -6,6 +6,36 @@ Prototype code for a pure Java WS-Man collector.
 * Grab WSDLs from WSDLs https://www.dmtf.org/standards/wsman
 * Replace resource-specific-GED with 'TransferElement'  `sed -i 's/resource-specific-GED/tns:TransferElement/g' *.wsdl`
 
+### Spec
+
+https://www.dmtf.org/sites/default/files/standards/documents/DSP0226_1.2.0.pdf
+
+Notes:
+* Enumeration context: a session
+* CQL: CIM Query Language
+* Different versions of WS-MAN include 1.0, 1.1 and 1.2, slight variations
+** 1.0 Service Requires WSMA addressing i.e. http://schemas.xmlsoap.org/ws/2004/08/addressing/fault
+** 1.1 and 1.2 Services suppor WSA-Rec (WS-Addressing W3C Recommendation)
+* ResourceURI often acts as a table or a "class,"
+* Optional timeout header OperationTimeout. See 6.1 of spec.
+
+
+*8.2.3 Optimized enumeration for small results sets
+** Could be useful when collecting
+
+### iDrac Specific
+
+* Master page http://delltechcenter.com/lc
+* WSDLs for iDrac6 http://en.community.dell.com/dell-groups/dtcmedia/m/mediagallery/20193729O 
+* General WSMAN info http://en.community.dell.com/techcenter/systems-management/w/wiki/4374.how-to-build-and-execute-wsman-method-commands
+
+### OpenNMS Integration
+
+* Node-level
+** Power Stuff
+* Generic Index
+** Physical Disk
+
 ## Debugging HTTPS Requests
 
 ```

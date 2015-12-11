@@ -1,14 +1,15 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
-    <groupId>org.opennms</groupId>
-    <artifactId>wsman</artifactId>
+    <groupId>org.opennms.core</groupId>
+    <artifactId>org.opennms.core.wsman</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.opennms.wsman</groupId>
-  <artifactId>org.opennms.wsman.client</artifactId>
-  <packaging>jar</packaging>
+  <groupId>org.opennms.core.wsman</groupId>
+  <artifactId>org.opennms.core.wsman.impl</artifactId>
+  <name>OpenNMS :: Core :: WS-Man :: Impl</name>
+  <packaging>bundle</packaging>
   
   <properties>
     <cxf.version>3.1.4</cxf.version>
@@ -23,6 +24,16 @@
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Bundle-RequiredExecutionEnvironment>JavaSE-1.8</Bundle-RequiredExecutionEnvironment>
+          </instructions>
         </configuration>
       </plugin>
       <plugin>
@@ -97,6 +108,11 @@
 
 
   <dependencies>
+      <dependency>
+          <groupId>org.opennms.core.wsman</groupId>
+          <artifactId>org.opennms.core.wsman.api</artifactId>
+          <version>${project.version}</version>
+      </dependency>
       <dependency>
           <groupId>org.apache.cxf</groupId>
           <artifactId>cxf-rt-frontend-jaxws</artifactId>
