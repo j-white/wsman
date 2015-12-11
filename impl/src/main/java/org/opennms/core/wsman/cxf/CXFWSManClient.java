@@ -2,7 +2,6 @@ package org.opennms.core.wsman.cxf;
 
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +15,7 @@ import javax.xml.ws.BindingProvider;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.frontend.ClientProxy;
+import org.apache.cxf.interceptor.transform.TransformOutInterceptor;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.apache.cxf.ws.addressing.AddressingProperties;
@@ -25,16 +25,18 @@ import org.opennms.core.wsman.WSManClient;
 import org.opennms.core.wsman.WSManEndpoint;
 import org.opennms.core.wsman.WSManEndpoint.WSManVersion;
 import org.opennms.core.wsman.WSManException;
-import org.opennms.wsman.Enumerate;
-import org.opennms.wsman.FilterType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
+import org.xmlsoap.schemas.ws._2004._09.enumeration.Enumerate;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerateResponse;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerationContextType;
+import org.xmlsoap.schemas.ws._2004._09.enumeration.FilterType;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.ItemListType;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.Pull;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;
+
+import com.google.common.collect.Maps;
 
 public class CXFWSManClient implements WSManClient {
     private final static Logger LOG = LoggerFactory.getLogger(CXFWSManClient.class);
@@ -117,15 +119,21 @@ public class CXFWSManClient implements WSManClient {
         AddResourecURIInterceptor interceptor = new AddResourecURIInterceptor("http://schemas.dmtf.org/wbem/wscim/1/*");
         cxfClient.getOutInterceptors().add(interceptor);
 
+        // Relocate the Filter element to the WS-Man namespace
+        // Our WSDls generate it one package but the servers expect it to be in the other
+        Map<String, String> outTransformMap = Maps.newHashMap();
+        outTransformMap.put("{http://schemas.xmlsoap.org/ws/2004/09/enumeration}Filter", "{http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd}Filter");
+
         if (m_endpoint.getServerVersion() == WSManVersion.WSMAN_1_0) {
             // WS-Man 1.0 does not support the W3C WS-Addressing, so we need to change the namespace
             // "http://www.w3.org/2005/08/addressing" becomes "http://schemas.xmlsoap.org/ws/2004/08/addressing"
-            Map<String, String> outTransformMap = Collections.singletonMap("{http://www.w3.org/2005/08/addressing}*", "{http://schemas.xmlsoap.org/ws/2004/08/addressing}*");
-            org.apache.cxf.interceptor.transform.TransformOutInterceptor transformOutInterceptor =
-                new org.apache.cxf.interceptor.transform.TransformOutInterceptor();
+            outTransformMap.put("{http://www.w3.org/2005/08/addressing}*", "{http://schemas.xmlsoap.org/ws/2004/08/addressing}*");
+        }
+
+        if (!outTransformMap.isEmpty()) {
+            final TransformOutInterceptor transformOutInterceptor = new TransformOutInterceptor();
             transformOutInterceptor.setOutTransformElements(outTransformMap);
             cxfClient.getOutInterceptors().add(transformOutInterceptor);
-            
         }
 
         return enumerator;

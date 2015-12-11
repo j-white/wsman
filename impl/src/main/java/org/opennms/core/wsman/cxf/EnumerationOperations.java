@@ -8,7 +8,7 @@ import javax.xml.ws.Action;
 import javax.xml.ws.BindingType;
 import javax.xml.ws.soap.Addressing;
 
-import org.opennms.wsman.Enumerate;
+import org.xmlsoap.schemas.ws._2004._09.enumeration.Enumerate;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerateResponse;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.Pull;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;

@@ -94,7 +94,7 @@
               <sources>
                 <source>src/main/resources/xsds</source>
               </sources>
-              <packageName>com.wsman</packageName>
+              <packageName>schemas.dmtf.org.wbem.wsman.v1</packageName>
               <outputDirectory>${project.build.directory}/generated-sources/xjc/</outputDirectory>
             </configuration>
         </plugin>

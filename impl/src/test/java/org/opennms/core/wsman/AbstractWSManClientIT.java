@@ -90,7 +90,7 @@ public abstract class AbstractWSManClientIT {
     }
 
     private void dumpRequestsToStdout() {
-        findAll(postRequestedFor(urlMatching("/.*"))).forEach(r -> prettyFormat(r.getBodyAsString(), 4));
+        findAll(postRequestedFor(urlMatching("/.*"))).forEach(r -> System.out.println(prettyFormat(r.getBodyAsString(), 4)));
     }
 
     public static String prettyFormat(String input, int indent) {
