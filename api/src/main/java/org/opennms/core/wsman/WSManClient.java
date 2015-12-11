@@ -19,9 +19,20 @@ public interface WSManClient {
     /**
      * Pulls the objects from an existing enumeration session.
      *
-     * @param contextId enumeration context id
+     * @param contextId
      * @param resourceUri
      * @return
      */
     public List<Node> pull(String contextId, String resourceUri);
+
+    /**
+     * Optimized version of the enumerate and pull operations.
+     *
+     * The implementation should attempt to consolidate the calls, using optimized enumeration.
+     *
+     * @param wql
+     * @param resourceUri
+     * @return
+     */
+    public List<Node> enumerateAndPullUsingWQLFilter(String wql, String resourceUri);
 }

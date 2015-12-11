@@ -85,10 +85,8 @@ public class WSManCli {
         WSManClient client = clientFactory.getClient(endpoint);
 
         for (String wql : arguments) {
-            LOG.info("Enumerating on '{}' with '{}'...", resourceUri, wql);
-            String contextId = client.enumerateWithWQLFilter(wql, resourceUri);
-            LOG.info("Pulling with context id '{}'..", contextId);
-            List<Node> nodes = client.pull(contextId, resourceUri);
+            LOG.info("Enumerating and pulling on '{}' with '{}'...", resourceUri, wql);
+            List<Node> nodes = client.enumerateAndPullUsingWQLFilter(wql, resourceUri);
             LOG.info("Succesfully pulled {} nodes.", nodes.size());
 
             // Dump the list of nodes to stdout

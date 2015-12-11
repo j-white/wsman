@@ -4,6 +4,7 @@ import javax.jws.WebMethod;
 import javax.jws.WebResult;
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
+import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.ws.Action;
 import javax.xml.ws.BindingType;
 import javax.xml.ws.soap.Addressing;
@@ -19,6 +20,7 @@ import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;
 // mock the RelatesTo and MessageID headers in tests
 @Addressing(required = false, enabled = true)
 @WebService(targetNamespace = "http://schemas.xmlsoap.org/ws/2004/09/enumeration")
+@XmlSeeAlso({schemas.dmtf.org.wbem.wsman.v1.AttributableEmpty.class})
 public interface EnumerationOperations {
 
         @WebResult(name = "EnumerateResponse", 

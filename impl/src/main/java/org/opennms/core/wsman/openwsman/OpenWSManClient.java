@@ -51,7 +51,7 @@ public class OpenWSManClient implements WSManClient {
             client.transport().set_auth_method(OpenWSManConstants.BASIC_AUTH_STR);
         }
 
-        if (m_endpoint.isStrictSSL()) {
+        if (!m_endpoint.isStrictSSL()) {
             // Disable SSL cert check
             client.transport().set_verify_host(0);
             client.transport().set_verify_peer(0);
@@ -121,6 +121,11 @@ public class OpenWSManClient implements WSManClient {
                 throw new WSManException("Failed to parse OpenWSMan's XML output.", e);
             }
         }
+    }
+
+    @Override
+    public List<Node> enumerateAndPullUsingWQLFilter(String wql, String resourceUri) {
+        return pull(enumerateWithWQLFilter(wql, resourceUri), resourceUri);
     }
 
     public static String innerXml(Node node) {

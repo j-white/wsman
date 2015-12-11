@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.xml.bind.JAXBElement;
 import javax.xml.ws.BindingProvider;
 
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
@@ -39,6 +40,10 @@ import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;
 
 import com.google.common.collect.Maps;
 
+import schemas.dmtf.org.wbem.wsman.v1.AnyListType;
+import schemas.dmtf.org.wbem.wsman.v1.AttributableEmpty;
+import schemas.dmtf.org.wbem.wsman.v1.ObjectFactory;
+
 public class CXFWSManClient implements WSManClient {
     private final static Logger LOG = LoggerFactory.getLogger(CXFWSManClient.class);
 
@@ -57,7 +62,7 @@ public class CXFWSManClient implements WSManClient {
         // R13.1-1: A service shall at least receive and send SOAP 1.2 SOAP Envelopes.
         factory.setBindingId("http://schemas.xmlsoap.org/wsdl/soap12/");
         EnumerationOperations enumerator = factory.create(EnumerationOperations.class);
-        
+
         Client cxfClient = ClientProxy.getClient(enumerator);
         Map<String, Object> requestContext = cxfClient.getRequestContext();
 
@@ -175,5 +180,43 @@ public class CXFWSManClient implements WSManClient {
             .filter(o -> o instanceof org.w3c.dom.Node)
             .map(o -> (Node)o)
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Node> enumerateAndPullUsingWQLFilter(String wql, String resourceUri) {
+        // Enumerate
+        FilterType filter = new FilterType();
+        filter.setDialect(WSManConstants.XML_NS_WQL_DIALECT);
+        filter.getContent().add(wql);
+        Enumerate msg = new Enumerate();
+        msg.setFilter(filter);
+
+        // Optimize the response
+        JAXBElement<AttributableEmpty> optimizeEnumeration = new ObjectFactory().createOptimizeEnumeration(new AttributableEmpty());
+        msg.getAny().add(optimizeEnumeration);
+
+        EnumerateResponse enumResponse = getEnumerator(resourceUri).enumerate(msg);
+        if (enumResponse == null) {
+            throw new WSManException("Enumeration failed. See logs for details.");
+        }
+
+        // FIXME: This is nasty and returns the first list, which could be anything
+        for (Object object : enumResponse.getAny()) {
+            if (object instanceof JAXBElement) {
+                JAXBElement<?> el = (JAXBElement<?>)object;
+                Object value = el.getValue();
+                if (value instanceof AnyListType) {
+                    AnyListType itemList = (AnyListType)value;
+                    return itemList.getAny().stream()
+                            .filter(o -> o instanceof org.w3c.dom.Node)
+                            .map(o -> (Node)o)
+                            .collect(Collectors.toList());
+                }
+            }
+        }
+
+        // Fallback to pulling
+        String contextId = (String)enumResponse.getEnumerationContext().getContent().get(0);
+        return pull(contextId, resourceUri);
     }
 }

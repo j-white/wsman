@@ -46,7 +46,7 @@ public abstract class AbstractWSManClientIT {
 
     @BeforeClass
     public static void setupClass() {
-        System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE");
+        //System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE");
     }
 
     @Before
@@ -58,7 +58,7 @@ public abstract class AbstractWSManClientIT {
     }
 
     @Test
-    public void canEnumerate() throws InterruptedException {
+    public void canEnumerateWithWQLFilter() throws InterruptedException {
         stubFor(post(urlEqualTo("/wsman"))
                 .willReturn(aResponse()
                     .withHeader("Content-Type", "Content-Type: application/soap+xml; charset=utf-8")
@@ -90,6 +90,25 @@ public abstract class AbstractWSManClientIT {
         assertEquals(120, inputVoltage);
     }
 
+    @Test
+    public void canEnumerateAndPullUsingWQLFilter() throws InterruptedException {
+        stubFor(post(urlEqualTo("/wsman"))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", "Content-Type: application/soap+xml; charset=utf-8")
+                    .withBodyFile("optimized-enum-response.xml")));
+
+        List<Node> nodes = client.enumerateAndPullUsingWQLFilter("select DeviceDescription,PrimaryStatus,TotalOutputPower,InputVoltage,Range1MaxInputPower,FirmwareVersion,RedundancyStatus from DCIM_PowerSupplyView where DetailedState != 'Absent' and PrimaryStatus != 0",
+                WSManConstants.CIM_ALL_AVAILABLE_CLASSES);
+
+        dumpRequestsToStdout();
+
+        assertEquals(1, nodes.size());
+
+        XMLTag tag = XMLDoc.from(nodes.get(0), true);
+        int inputVoltage = Integer.valueOf(tag.gotoChild("n1:InputVoltage").getText());
+        assertEquals(120, inputVoltage);
+    }
+    
     private void dumpRequestsToStdout() {
         findAll(postRequestedFor(urlMatching("/.*"))).forEach(r -> System.out.println(prettyFormat(r.getBodyAsString(), 4)));
     }
