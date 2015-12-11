@@ -86,7 +86,7 @@ public class WSManCli {
 
         for (String wql : arguments) {
             LOG.info("Enumerating and pulling on '{}' with '{}'...", resourceUri, wql);
-            List<Node> nodes = client.enumerateAndPullUsingWQLFilter(wql, resourceUri);
+            List<Node> nodes = client.enumerateAndPullUsingFilter(WSManConstants.XML_NS_WQL_DIALECT, wql, resourceUri);
             LOG.info("Succesfully pulled {} nodes.", nodes.size());
 
             // Dump the list of nodes to stdout

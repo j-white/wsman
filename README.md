@@ -5,6 +5,7 @@ Prototype code for a pure Java WS-Man collector.
 ## TODO
 * Better exception handling
 ** When basic authenticaiton fails
+* Pre-emptive authentication when basic auth is enabled
 
 ## WS-Man Specifications
 

@@ -17,6 +17,7 @@ import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
 
 import org.opennms.core.wsman.WSManClient;
+import org.opennms.core.wsman.WSManConstants;
 import org.opennms.core.wsman.WSManEndpoint;
 import org.opennms.core.wsman.WSManException;
 import org.openwsman.Client;
@@ -67,14 +68,18 @@ public class OpenWSManClient implements WSManClient {
     }
 
     @Override
-    public String enumerateWithWQLFilter(String wql, String resourceUri) {
+    public String enumerateWithFilter(String dialect, String filter, String resourceUri) {
         final Client client = getClient();
         final ClientOptions options = getClientOptions();
 
-        Filter filter = new Filter();
-        filter.wql(wql);
+        Filter enumFilter = new Filter();
+        if (WSManConstants.XML_NS_WQL_DIALECT.equals(dialect)) {
+            enumFilter.wql(filter);
+        } else {
+            throw new WSManException("Unsupported dialect.");
+        }
 
-        XmlDoc result = client.enumerate(options, filter, resourceUri);
+        XmlDoc result = client.enumerate(options, enumFilter, resourceUri);
         if ((result == null) || result.isFault()) {
             throw new WSManException("Enumeration failed: " + ((result != null) ? result.fault().reason() : "?"));
         } else {
@@ -124,8 +129,8 @@ public class OpenWSManClient implements WSManClient {
     }
 
     @Override
-    public List<Node> enumerateAndPullUsingWQLFilter(String wql, String resourceUri) {
-        return pull(enumerateWithWQLFilter(wql, resourceUri), resourceUri);
+    public List<Node> enumerateAndPullUsingFilter(String dialect, String filter, String resourceUri) {
+        return pull(enumerateWithFilter(dialect, filter, resourceUri), resourceUri);
     }
 
     public static String innerXml(Node node) {

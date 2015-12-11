@@ -7,14 +7,14 @@ import org.w3c.dom.Node;
 public interface WSManClient {
 
     /**
-     * Starts a new enumeration session using a WQL query
-     * as a filter
+     * Starts a new enumeration session with a filter.
      *
-     * @param wql 
+     * @param dialect
+     * @param filter
      * @param resourceUri
      * @return context id
      */
-    public String enumerateWithWQLFilter(String wql, String resourceUri);
+    public String enumerateWithFilter(String dialect, String filter, String resourceUri);
 
     /**
      * Pulls the objects from an existing enumeration session.
@@ -30,9 +30,10 @@ public interface WSManClient {
      *
      * The implementation should attempt to consolidate the calls, using optimized enumeration.
      *
-     * @param wql
+     * @param dialect
+     * @param filter
      * @param resourceUri
      * @return
      */
-    public List<Node> enumerateAndPullUsingWQLFilter(String wql, String resourceUri);
+    public List<Node> enumerateAndPullUsingFilter(String dialect, String filter, String resourceUri);
 }

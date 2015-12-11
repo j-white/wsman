@@ -45,7 +45,9 @@ public abstract class AbstractWSManClientDeviceIT {
 
     @Test
     public void canGetInputVoltage() {
-        List<Node> powerSupplies = client.enumerateAndPullUsingWQLFilter("select DeviceDescription,PrimaryStatus,TotalOutputPower,InputVoltage,Range1MaxInputPower,FirmwareVersion,RedundancyStatus from DCIM_PowerSupplyView where DetailedState != 'Absent' and PrimaryStatus != 0",
+        List<Node> powerSupplies = client.enumerateAndPullUsingFilter(
+                WSManConstants.XML_NS_WQL_DIALECT,
+                "select DeviceDescription,PrimaryStatus,TotalOutputPower,InputVoltage,Range1MaxInputPower,FirmwareVersion,RedundancyStatus from DCIM_PowerSupplyView where DetailedState != 'Absent' and PrimaryStatus != 0",
                 WSManConstants.CIM_ALL_AVAILABLE_CLASSES);
         assertEquals(1, powerSupplies.size());
 

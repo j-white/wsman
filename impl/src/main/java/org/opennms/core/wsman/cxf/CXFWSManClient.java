@@ -1,7 +1,5 @@
 package org.opennms.core.wsman.cxf;
 
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +17,7 @@ import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.interceptor.transform.TransformOutInterceptor;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
+import org.apache.cxf.transport.http.auth.DefaultBasicAuthSupplier;
 import org.apache.cxf.ws.addressing.AddressingProperties;
 import org.apache.cxf.ws.addressing.AttributedURIType;
 import org.apache.cxf.ws.addressing.EndpointReferenceType;
@@ -98,15 +97,11 @@ public class CXFWSManClient implements WSManClient {
         // Setup auth
         if (m_endpoint.isBasicAuth()) {
             LOG.debug("Enabling basic authentication.");
-            //TODO: This authenticator shouldn't be global
-            Authenticator.setDefault(new Authenticator() {
-                @Override
-                protected PasswordAuthentication getPasswordAuthentication() {
-                    return new PasswordAuthentication(
-                            m_endpoint.getUsername(),
-                            m_endpoint.getPassword().toCharArray());
-                }
-            });
+            HTTPConduit http = (HTTPConduit) cxfClient.getConduit();
+            http.setAuthSupplier(new DefaultBasicAuthSupplier());
+            http.getAuthorization().setUserName(m_endpoint.getUsername());
+            http.getAuthorization().setPassword(m_endpoint.getPassword());
+
             requestContext.put(BindingProvider.USERNAME_PROPERTY, m_endpoint.getUsername());
             requestContext.put(BindingProvider.PASSWORD_PROPERTY, m_endpoint.getPassword());
         }
@@ -145,22 +140,30 @@ public class CXFWSManClient implements WSManClient {
         return enumerator;
     }
 
-    @Override
-    public String enumerateWithWQLFilter(String wql, String resourceUri) {
-        // Enumerate
-        FilterType filter = new FilterType();
-        filter.setDialect(WSManConstants.XML_NS_WQL_DIALECT);
-        filter.getContent().add(wql);
-        Enumerate msg = new Enumerate();
-        msg.setFilter(filter);
+    private EnumerateResponse enumerate(String dialect, String filter, String resourceUri, boolean optimized) {
+        FilterType filterType = new FilterType();
+        filterType.setDialect(dialect);
+        filterType.getContent().add(filter);
+        Enumerate enumerate = new Enumerate();
+        enumerate.setFilter(filterType);
 
-        EnumerateResponse enumResponse = getEnumerator(resourceUri).enumerate(msg);
-        if (enumResponse == null) {
+        if (optimized) {
+            // Request an optimized response
+            JAXBElement<AttributableEmpty> optimizeEnumeration = new ObjectFactory().createOptimizeEnumeration(new AttributableEmpty());
+            enumerate.getAny().add(optimizeEnumeration);
+        }
+
+        return getEnumerator(resourceUri).enumerate(enumerate);
+    }
+
+    @Override
+    public String enumerateWithFilter(String dialect, String filter, String resourceUri) {
+        EnumerateResponse enumerateResponse = enumerate(dialect, filter, resourceUri, false);
+        if (enumerateResponse == null) {
             throw new WSManException("Enumeration failed. See logs for details.");
         }
 
-        String contextId = (String)enumResponse.getEnumerationContext().getContent().get(0);
-        return contextId;
+        return (String)enumerateResponse.getEnumerationContext().getContent().get(0);
     }
 
     @Override
@@ -183,25 +186,14 @@ public class CXFWSManClient implements WSManClient {
     }
 
     @Override
-    public List<Node> enumerateAndPullUsingWQLFilter(String wql, String resourceUri) {
-        // Enumerate
-        FilterType filter = new FilterType();
-        filter.setDialect(WSManConstants.XML_NS_WQL_DIALECT);
-        filter.getContent().add(wql);
-        Enumerate msg = new Enumerate();
-        msg.setFilter(filter);
-
-        // Optimize the response
-        JAXBElement<AttributableEmpty> optimizeEnumeration = new ObjectFactory().createOptimizeEnumeration(new AttributableEmpty());
-        msg.getAny().add(optimizeEnumeration);
-
-        EnumerateResponse enumResponse = getEnumerator(resourceUri).enumerate(msg);
-        if (enumResponse == null) {
+    public List<Node> enumerateAndPullUsingFilter(String dialect, String filter, String resourceUri) {
+        EnumerateResponse enumerateResponse = enumerate(dialect, filter, resourceUri, true);
+        if (enumerateResponse == null) {
             throw new WSManException("Enumeration failed. See logs for details.");
         }
 
         // FIXME: This is nasty and returns the first list, which could be anything
-        for (Object object : enumResponse.getAny()) {
+        for (Object object : enumerateResponse.getAny()) {
             if (object instanceof JAXBElement) {
                 JAXBElement<?> el = (JAXBElement<?>)object;
                 Object value = el.getValue();
@@ -216,7 +208,7 @@ public class CXFWSManClient implements WSManClient {
         }
 
         // Fallback to pulling
-        String contextId = (String)enumResponse.getEnumerationContext().getContent().get(0);
+        String contextId = (String)enumerateResponse.getEnumerationContext().getContent().get(0);
         return pull(contextId, resourceUri);
     }
 }
