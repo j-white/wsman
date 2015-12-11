@@ -1,4 +1,4 @@
-package org.opennms;
+package org.opennms.core.wsman.cxf;
 
 import java.util.List;
 

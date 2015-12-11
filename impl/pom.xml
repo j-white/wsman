@@ -10,9 +10,9 @@
   <artifactId>org.opennms.core.wsman.impl</artifactId>
   <name>OpenNMS :: Core :: WS-Man :: Impl</name>
   <packaging>bundle</packaging>
-  
+
   <properties>
-    <cxf.version>3.1.4</cxf.version>
+    <skipITs>true</skipITs>
   </properties>
 
   <build>
@@ -20,7 +20,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.3</version>
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
@@ -37,77 +36,22 @@
         </configuration>
       </plugin>
       <plugin>
-         <groupId>org.apache.cxf</groupId>
-         <artifactId>cxf-codegen-plugin</artifactId>
-         <version>${cxf.version}</version>
-         <executions>
-             <execution>
-                 <id>generate-sources</id>
-                 <phase>generate-sources</phase>
-                 <configuration>
-                     <wsdlOptions>
-                         <wsdlOption>
-                             <wsdl>${basedir}/src/main/resources/ws-man-enumeration-ops-v1.0.0.wsdl</wsdl>
-                         </wsdlOption>
-                         <wsdlOption>
-                             <wsdl>${basedir}/src/main/resources/ws-man-resource-access-ops-v1.0.0.wsdl</wsdl>
-                         </wsdlOption>
-                         <wsdlOption>
-                             <wsdl>${basedir}/src/main/resources/ws-man-notifications-ops-v1.0.0.wsdl</wsdl>
-                         </wsdlOption>
-                     </wsdlOptions>
-                 </configuration>
-                 <goals>
-                     <goal>wsdl2java</goal>
-                 </goals>
-             </execution>
-         </executions>
-     </plugin>
-     <plugin>
-         <groupId>org.codehaus.mojo</groupId>
-         <artifactId>build-helper-maven-plugin</artifactId>
-         <version>1.10</version>
-         <executions>
-             <execution>
-                 <id>add-source</id>
-                 <phase>generate-sources</phase>
-                 <goals>
-                     <goal>add-source</goal>
-                 </goals>
-                 <configuration>
-                     <sources>
-                         <source>${project.build.directory}/generated-sources/cxf/</source>
-                         <source>${project.build.directory}/generated-sources/xjc/</source>
-                     </sources>
-                 </configuration>
-             </execution>
-         </executions>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <skipITs>${skipITs}</skipITs>
+          <reuseForks>false</reuseForks>
+        </configuration>
       </plugin>
-       <!-- JAXB xjc plugin that invokes the xjc compiler to compile XML schema into Java classes.-->
-        <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>jaxb2-maven-plugin</artifactId>
-            <version>2.2</version>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>xjc</goal>
-                    </goals>
-                </execution>
-            </executions>
-            <configuration>
-                 <sources>
-                    <source>src/main/resources/xsds</source>
-                </sources>
-                <packageName>com.wsman</packageName>
-                <outputDirectory>${project.build.directory}/generated-sources/xjc/</outputDirectory>
-            </configuration>
-        </plugin>
     </plugins>
   </build>
 
-
   <dependencies>
+      <dependency>
+         <groupId>org.slf4j</groupId>
+         <artifactId>slf4j-api</artifactId>
+         <version>${slf4jVersion}</version>
+      </dependency>
       <dependency>
           <groupId>org.opennms.core.wsman</groupId>
           <artifactId>org.opennms.core.wsman.api</artifactId>
@@ -116,33 +60,27 @@
       <dependency>
           <groupId>org.apache.cxf</groupId>
           <artifactId>cxf-rt-frontend-jaxws</artifactId>
-          <version>${cxf.version}</version>
+          <version>${cxfVersion}</version>
       </dependency>
       <dependency>
           <groupId>org.apache.cxf</groupId>
           <artifactId>cxf-rt-transports-http</artifactId>
-          <version>${cxf.version}</version>
-      </dependency>
-          <!-- Jetty is needed if you're are not using the CXFServlet -->
-      <dependency>
-          <groupId>org.apache.cxf</groupId>
-          <artifactId>cxf-rt-transports-http-jetty</artifactId>
-          <version>${cxf.version}</version>
+          <version>${cxfVersion}</version>
       </dependency>
      <dependency>
          <groupId>org.apache.cxf</groupId>
          <artifactId>cxf-rt-ws-mex</artifactId>
-         <version>${cxf.version}</version>
+         <version>${cxfVersion}</version>
      </dependency>
      <dependency>
      	<groupId>org.apache.cxf</groupId>
      	<artifactId>cxf-rt-transports-local</artifactId>
-     	<version>${cxf.version}</version>
+     	<version>${cxfVersion}</version>
      </dependency>
      <dependency>
          <groupId>org.apache.cxf</groupId>
          <artifactId>cxf-rt-ws-addr</artifactId>
-         <version>${cxf.version}</version>
+         <version>${cxfVersion}</version>
      </dependency>
      <dependency>
          <groupId>openwsman</groupId>
@@ -160,62 +98,63 @@
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
         <version>4.12</version>
-    </dependency>
-<dependency>
-    <groupId>com.github.tomakehurst</groupId>
-    <artifactId>wiremock</artifactId>
-    <version>1.57</version>
-
-    <!-- Include everything below here if you have dependency conflicts -->
-    <classifier>standalone</classifier>
-    <exclusions>
-        <exclusion>
-          <groupId>org.mortbay.jetty</groupId>
-          <artifactId>jetty</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-annotations</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>jackson-databind</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>httpclient</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.skyscreamer</groupId>
-          <artifactId>jsonassert</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>xmlunit</groupId>
-          <artifactId>xmlunit</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.jayway.jsonpath</groupId>
-          <artifactId>json-path</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>net.sf.jopt-simple</groupId>
-          <artifactId>jopt-simple</artifactId>
-        </exclusion>
-     </exclusions>
+        <scope>test</scope>
     </dependency>
     <dependency>
        <groupId>org.slf4j</groupId>
        <artifactId>slf4j-simple</artifactId>
-       <version>1.7.13</version>
+       <version>${slf4jVersion}</version>
        <scope>test</scope>
-   </dependency>
+    </dependency>
+    <dependency>
+      <groupId>com.github.tomakehurst</groupId>
+      <artifactId>wiremock</artifactId>
+      <version>1.57</version>
+  
+      <!-- Include everything below here if you have dependency conflicts -->
+      <classifier>standalone</classifier>
+      <exclusions>
+          <exclusion>
+            <groupId>org.mortbay.jetty</groupId>
+            <artifactId>jetty</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.skyscreamer</groupId>
+            <artifactId>jsonassert</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>xmlunit</groupId>
+            <artifactId>xmlunit</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>net.sf.jopt-simple</groupId>
+            <artifactId>jopt-simple</artifactId>
+          </exclusion>
+       </exclusions>
+    </dependency>
   </dependencies>
 </project>

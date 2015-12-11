@@ -1,19 +1,14 @@
-package org.opennms;
+package org.opennms.core.wsman;
 
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-import org.opennms.wsman.Enumerate;
-import org.opennms.wsman.FilterType;
+import org.opennms.core.wsman.WSManEndpoint;
+import org.opennms.core.wsman.WSManEndpoint.WSManVersion;
 import org.w3c.dom.Node;
-import org.xmlsoap.schemas.ws._2004._09.enumeration.ItemListType;
-import org.xmlsoap.schemas.ws._2004._09.enumeration.Pull;
-import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;
-import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerateResponse;
-import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerationContextType;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
-import com.github.tomakehurst.wiremock.verification.LoggedRequest;
 import com.mycila.xmltool.XMLDoc;
 import com.mycila.xmltool.XMLTag;
 
@@ -22,6 +17,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
 import java.util.List;
 
 import javax.xml.transform.OutputKeys;
@@ -31,18 +27,36 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 
-public class WSManIT {
+/**
+ * This test connects to a local HTTP server provided
+ * by WireMock that returns static content.
+ *
+ * Used to verify the generated requests and validate response parsing.
+ *
+ * @author jwhite
+ */
+public abstract class AbstractWSManClientIT {
 
-    private WSManCxfClient client = new WSManCxfClient("127.0.0.1", 8089, "/wsman", "http", "admin", "admin");
-    
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(8089);
+
+    private WSManClient client;
+
+    public abstract WSManClientFactory getFactory();
+
     @BeforeClass
     public static void setupClass() {
         System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "TRACE");
     }
 
-    @Rule
-    public WireMockRule wireMockRule = new WireMockRule(8089);
-    
+    @Before
+    public void setUp() throws MalformedURLException {
+        WSManEndpoint endpoint = new WSManEndpoint.Builder("http://127.0.0.1:8089/wsman")
+                .withServerVersion(WSManVersion.WSMAN_1_0)
+                .build();
+        client = getFactory().getClient(endpoint);
+    }
+
     @Test
     public void canEnumerate() throws InterruptedException {
         stubFor(post(urlEqualTo("/wsman"))
@@ -50,20 +64,11 @@ public class WSManIT {
                     .withHeader("Content-Type", "Content-Type: application/soap+xml; charset=utf-8")
                     .withBodyFile("enum-response.xml")));
 
-        FilterType filter = new FilterType();
-        filter.setDialect("http://schemas.microsoft.com/wbem/wsman/1/WQL");
-        filter.getContent().add("select DeviceDescription,PrimaryStatus,TotalOutputPower,InputVoltage,Range1MaxInputPower,FirmwareVersion,RedundancyStatus from DCIM_PowerSupplyView where DetailedState != 'Absent' and PrimaryStatus != 0");
+        String contextId = client.enumerate("select DeviceDescription,PrimaryStatus,TotalOutputPower,InputVoltage,Range1MaxInputPower,FirmwareVersion,RedundancyStatus from DCIM_PowerSupplyView where DetailedState != 'Absent' and PrimaryStatus != 0");
 
-        Enumerate msg = new Enumerate();
-        msg.setFilter(filter);
-        EnumerateResponse enumResponse = client.getEnumerator().enumerate(msg);
-        
-        List<LoggedRequest> requests = findAll(postRequestedFor(urlMatching("/.*")));
-        for (LoggedRequest r : requests) {
-            System.out.println(prettyFormat(r.getBodyAsString(), 4));
-        }
+        dumpRequestsToStdout();
 
-        assertEquals("c6595ee1-2664-1664-801f-c115cfb5fe14", enumResponse.getEnumerationContext().getContent().iterator().next());
+        assertEquals("c6595ee1-2664-1664-801f-c115cfb5fe14", contextId);
     }
 
     @Test
@@ -73,24 +78,19 @@ public class WSManIT {
                     .withHeader("Content-Type", "Content-Type: application/soap+xml; charset=utf-8")
                     .withBodyFile("pull-response.xml")));
 
-        EnumerationContextType enumContextType = new EnumerationContextType();
-        enumContextType.getContent().add("c6595ee1-2664-1664-801f-c115cfb5fe14");
-        Pull pull = new Pull();
-        pull.setEnumerationContext(enumContextType);
+        List<Node> nodes = client.pull("c6595ee1-2664-1664-801f-c115cfb5fe14");
 
-        PullResponse pullResponse = client.getEnumerator().pull(pull);
-        
-        List<LoggedRequest> requests = findAll(postRequestedFor(urlMatching("/.*")));
-        for (LoggedRequest r : requests) {
-            System.out.println(prettyFormat(r.getBodyAsString(), 4));
-        }
+        dumpRequestsToStdout();
 
-        ItemListType itemList = pullResponse.getItems();
-        assertEquals(1, itemList.getAny().size());
-        
-        XMLTag tag = XMLDoc.from((Node)itemList.getAny().get(0), true);
+        assertEquals(1, nodes.size());
+
+        XMLTag tag = XMLDoc.from(nodes.get(0), true);
         int inputVoltage = Integer.valueOf(tag.gotoChild("n1:InputVoltage").getText());
         assertEquals(120, inputVoltage);
+    }
+
+    private void dumpRequestsToStdout() {
+        findAll(postRequestedFor(urlMatching("/.*"))).forEach(r -> prettyFormat(r.getBodyAsString(), 4));
     }
 
     public static String prettyFormat(String input, int indent) {

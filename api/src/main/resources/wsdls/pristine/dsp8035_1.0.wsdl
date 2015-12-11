@@ -69,7 +69,7 @@ Change log:
   </wsdl:types>
 
   <!--
-  In some of the messages defined below a "tns:TransferElement"
+  In some of the messages defined below a "resource-specific-GED"
   is expected to be inserted before the WSDL is processed by any tooling.
   Thus the WSDL as presented is not usable until after this substitution
   is done.
@@ -77,20 +77,20 @@ Change log:
  
   <wsdl:message name="EmptyMessage"/>
   <wsdl:message name="CreateRequestMessage">
-    <wsdl:part name="Body" element="tns:TransferElement"/>
+    <wsdl:part name="Body" element="resource-specific-GED"/>
   </wsdl:message>
   <wsdl:message name="CreateResponseMessage">
     <wsdl:part name="Body" element="tns:ResourceCreated"/>
   </wsdl:message>
   <wsdl:message name="GetResponseMessage">
-    <wsdl:part name="Body" element="tns:TransferElement"/>
+    <wsdl:part name="Body" element="resource-specific-GED"/>
   </wsdl:message>
   <wsdl:message name="PutRequestMessage">
-    <wsdl:part name="Body" element="tns:TransferElement"/>
+    <wsdl:part name="Body" element="resource-specific-GED"/>
   </wsdl:message>
   <wsdl:message name="PutResponseMessage">
     <!-- Note this 'part' may be omitted -->
-    <wsdl:part name="Body" element="tns:TransferElement"/>
+    <wsdl:part name="Body" element="resource-specific-GED"/>
   </wsdl:message>
  
   <wsdl:portType name="Resource">

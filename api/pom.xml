@@ -31,6 +31,81 @@
           </instructions>
         </configuration>
       </plugin>
+      <plugin>
+         <groupId>org.apache.cxf</groupId>
+         <artifactId>cxf-codegen-plugin</artifactId>
+         <version>${cxfVersion}</version>
+         <executions>
+             <execution>
+                 <id>generate-sources</id>
+                 <phase>generate-sources</phase>
+                 <configuration>
+                     <wsdlOptions>
+                         <wsdlOption>
+                             <wsdl>${basedir}/src/main/resources/wsdls/dsp8035_1.0.wsdl</wsdl>
+                         </wsdlOption>
+                         <wsdlOption>
+                             <wsdl>${basedir}/src/main/resources/wsdls/dsp8036_1.0.wsdl</wsdl>
+                         </wsdlOption>
+                         <wsdlOption>
+                             <wsdl>${basedir}/src/main/resources/wsdls/dsp8037_1.0.wsdl</wsdl>
+                         </wsdlOption>
+                     </wsdlOptions>
+                 </configuration>
+                 <goals>
+                     <goal>wsdl2java</goal>
+                 </goals>
+             </execution>
+         </executions>
+     </plugin>
+     <plugin>
+         <groupId>org.codehaus.mojo</groupId>
+         <artifactId>build-helper-maven-plugin</artifactId>
+         <version>1.10</version>
+         <executions>
+           <execution>
+             <id>add-source</id>
+             <phase>generate-sources</phase>
+             <goals>
+               <goal>add-source</goal>
+             </goals>
+             <configuration>
+               <sources>
+                 <source>${project.build.directory}/generated-sources/cxf/</source>
+                 <source>${project.build.directory}/generated-sources/xjc/</source>
+               </sources>
+             </configuration>
+           </execution>
+         </executions>
+      </plugin>
+       <!-- JAXB xjc plugin that invokes the xjc compiler to compile XML schema into Java classes.-->
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>jaxb2-maven-plugin</artifactId>
+            <version>2.2</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>xjc</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <sources>
+                <source>src/main/resources/xsds</source>
+              </sources>
+              <packageName>com.wsman</packageName>
+              <outputDirectory>${project.build.directory}/generated-sources/xjc/</outputDirectory>
+            </configuration>
+        </plugin>
     </plugins>
   </build>
+  
+  <dependencies>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guavaVersion}</version>
+    </dependency>
+  </dependencies>
 </project>

@@ -1,4 +1,4 @@
-package org.opennms;
+package org.opennms.core.wsman.cxf;
 
 import javax.jws.WebMethod;
 import javax.jws.WebResult;
