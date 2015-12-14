@@ -17,6 +17,14 @@ public interface WSManClient {
     Node get(Map<String, String> selectors, String resourceUri);
 
     /**
+     * Starts a new enumeration session.
+     *
+     * @param resourceUri
+     * @return context id
+     */
+    public String enumerate(String resourceUri);
+
+    /**
      * Starts a new enumeration session with a filter.
      *
      * @param dialect
@@ -34,6 +42,16 @@ public interface WSManClient {
      * @return
      */
     public List<Node> pull(String contextId, String resourceUri);
+
+    /**
+     * Optimized version of the enumerate and pull operations.
+     *
+     * The implementation should attempt to consolidate the calls, using optimized enumeration.
+     *
+     * @param resourceUri
+     * @return
+     */
+    public List<Node> enumerateAndPull(String resourceUri);
 
     /**
      * Optimized version of the enumerate and pull operations.

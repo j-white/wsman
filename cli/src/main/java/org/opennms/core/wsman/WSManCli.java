@@ -68,9 +68,6 @@ public class WSManCli {
 
         try {
             parser.parseArgument(args);
-            if (operation == WSManOperation.ENUM && arguments.isEmpty()) {
-                throw new CmdLineException(parser, Messages.NO_ARGUMENT);
-            }
         } catch( CmdLineException e ) {
             System.err.println("java -jar wsman4j.jar [options...] arguments...");
             parser.printUsage(System.err);
@@ -98,14 +95,26 @@ public class WSManCli {
         WSManClient client = clientFactory.getClient(endpoint);
         
         if (operation == WSManOperation.ENUM) {
-            for (String wql : arguments) {
-                LOG.info("Enumerating and pulling on '{}' with '{}'...", resourceUri, wql);
-                List<Node> nodes = client.enumerateAndPullUsingFilter(WSManConstants.XML_NS_WQL_DIALECT, wql, resourceUri);
+            
+            if (arguments.isEmpty()) {
+                LOG.info("Enumerating and pulling on '{}'...", resourceUri);
+                List<Node> nodes = client.enumerateAndPull(resourceUri);
                 LOG.info("Succesfully pulled {} nodes.", nodes.size());
 
                 // Dump the list of nodes to stdout
                 for (Node node : nodes) {
                     dumpNodeToStdout(node);
+                }
+            } else {
+                for (String wql : arguments) {
+                    LOG.info("Enumerating and pulling on '{}' with '{}'...", resourceUri, wql);
+                    List<Node> nodes = client.enumerateAndPullUsingFilter(WSManConstants.XML_NS_WQL_DIALECT, wql, resourceUri);
+                    LOG.info("Succesfully pulled {} nodes.", nodes.size());
+
+                    // Dump the list of nodes to stdout
+                    for (Node node : nodes) {
+                        dumpNodeToStdout(node);
+                    }
                 }
             }
         } else if (operation == WSManOperation.GET) {

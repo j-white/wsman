@@ -23,6 +23,8 @@ The WS-Management specificatons are maintained by the DMTF and made available he
 * 8.2.3 Optimized enumeration for small results sets
 ..* Could be useful when collecting
 
+* When pulling, keep pulling until we get a '<n:EndOfSequence/>' (xmlns:n="http://schemas.xmlsoap.org/ws/2004/09/enumeration")
+
 ## iDrac WS-Man Specifications
 
 Master page is at http://delltechcenter.com/lc
@@ -30,6 +32,15 @@ Master page is at http://delltechcenter.com/lc
 WSDLs for iDrac6 http://en.community.dell.com/dell-groups/dtcmedia/m/mediagallery/20193729
 
 General WSMAN info http://en.community.dell.com/techcenter/systems-management/w/wiki/4374.how-to-build-and-execute-wsman-method-commands
+
+## Windows
+
+`winrm quickconfig`
+`winrm e winrm/config/listener`
+
+Defaults to port 5985
+
+See https://github.com/Openwsman/openwsman/wiki/winrm-over-openwsman-setup
 
 ## Request/Response Examples
 

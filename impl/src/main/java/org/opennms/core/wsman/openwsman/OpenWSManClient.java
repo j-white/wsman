@@ -179,4 +179,14 @@ public class OpenWSManClient implements WSManClient {
         }
         return sb.toString(); 
     }
+
+    @Override
+    public String enumerate(String resourceUri) {
+        throw new WSManException("Unsupported.");
+    }
+
+    @Override
+    public List<Node> enumerateAndPull(String resourceUri) {
+        throw new WSManException("Unsupported.");
+    }
 }

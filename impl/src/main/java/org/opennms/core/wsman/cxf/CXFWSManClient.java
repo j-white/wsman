@@ -1,5 +1,7 @@
 package org.opennms.core.wsman.cxf;
 
+import java.math.BigInteger;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +22,7 @@ import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.interceptor.transform.TransformInInterceptor;
 import org.apache.cxf.interceptor.transform.TransformOutInterceptor;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
+import org.apache.cxf.message.Message;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.apache.cxf.transport.http.auth.DefaultBasicAuthSupplier;
 import org.apache.cxf.ws.addressing.AddressingProperties;
@@ -45,6 +48,7 @@ import com.google.common.collect.Maps;
 
 import schemas.dmtf.org.wbem.wsman.v1.AnyListType;
 import schemas.dmtf.org.wbem.wsman.v1.AttributableEmpty;
+import schemas.dmtf.org.wbem.wsman.v1.AttributablePositiveInteger;
 import schemas.dmtf.org.wbem.wsman.v1.ObjectFactory;
 
 public class CXFWSManClient implements WSManClient {
@@ -144,6 +148,11 @@ public class CXFWSManClient implements WSManClient {
             cxfClient.getInInterceptors().add(transformInInterceptor);
         }
 
+        // Remove the action="" from the Content-Type header to make Windows Server 2008 ha
+        Map<String, List<String>> headers = Maps.newHashMap();
+        headers.put("Content-Type", Collections.singletonList("application/soap+xml;charset=UTF-8"));
+        requestContext.put(Message.PROTOCOL_HEADERS, headers);
+
         return proxyService;
     }
 
@@ -194,6 +203,35 @@ public class CXFWSManClient implements WSManClient {
         return getEnumerator(resourceUri).enumerate(enumerate);
     }
 
+    private EnumerateResponse enumerate(String resourceUri, boolean optimized) {
+        Enumerate enumerate = new Enumerate();
+
+        ObjectFactory factory = new ObjectFactory();
+        
+        if (optimized) {
+            // Request an optimized response
+            JAXBElement<AttributableEmpty> optimizeEnumeration = factory.createOptimizeEnumeration(new AttributableEmpty());
+            enumerate.getAny().add(optimizeEnumeration);
+
+            AttributablePositiveInteger maxElementsValue = new AttributablePositiveInteger();
+            maxElementsValue.setValue(BigInteger.valueOf(20));
+            JAXBElement<AttributablePositiveInteger> maxElements = factory.createMaxElements(maxElementsValue);
+            enumerate.getAny().add(maxElements);
+        }
+
+        return getEnumerator(resourceUri).enumerate(enumerate);
+    }
+
+    @Override
+    public String enumerate(String resourceUri) {
+        EnumerateResponse enumerateResponse = enumerate(resourceUri, false);
+        if (enumerateResponse == null) {
+            throw new WSManException("Enumeration failed. See logs for details.");
+        }
+
+        return (String)enumerateResponse.getEnumerationContext().getContent().get(0);
+    }
+
     @Override
     public String enumerateWithFilter(String dialect, String filter, String resourceUri) {
         EnumerateResponse enumerateResponse = enumerate(dialect, filter, resourceUri, false);
@@ -221,6 +259,33 @@ public class CXFWSManClient implements WSManClient {
             .filter(o -> o instanceof org.w3c.dom.Node)
             .map(o -> (Node)o)
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Node> enumerateAndPull(String resourceUri) {
+        EnumerateResponse enumerateResponse = enumerate(resourceUri, true);
+        if (enumerateResponse == null) {
+            throw new WSManException("Enumeration failed. See logs for details.");
+        }
+
+        // FIXME: This is nasty and returns the first list, which could be anything
+        for (Object object : enumerateResponse.getAny()) {
+            if (object instanceof JAXBElement) {
+                JAXBElement<?> el = (JAXBElement<?>)object;
+                Object value = el.getValue();
+                if (value instanceof AnyListType) {
+                    AnyListType itemList = (AnyListType)value;
+                    return itemList.getAny().stream()
+                            .filter(o -> o instanceof org.w3c.dom.Node)
+                            .map(o -> (Node)o)
+                            .collect(Collectors.toList());
+                }
+            }
+        }
+
+        // Fallback to pulling
+        String contextId = (String)enumerateResponse.getEnumerationContext().getContent().get(0);
+        return pull(contextId, resourceUri);
     }
 
     @Override
@@ -270,4 +335,5 @@ public class CXFWSManClient implements WSManClient {
             throw new WSManException("XML serialization failed.", e);
         }
     }
+
 }
