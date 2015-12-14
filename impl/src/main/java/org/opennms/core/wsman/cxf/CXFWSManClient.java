@@ -148,7 +148,11 @@ public class CXFWSManClient implements WSManClient {
             cxfClient.getInInterceptors().add(transformInInterceptor);
         }
 
-        // Remove the action="" from the Content-Type header to make Windows Server 2008 ha
+        // Remove the action attribute from the Content-Type header. Reasoning:
+        // By default, CXF will add the action to the Content-Type header, generating something like:
+        // Content-Type: application/soap+xml; action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate"
+        // Windows Server 2008 barfs on the action=".*" attribute and none of the other servers
+        // seem to care of it's there or not, so we remove it.
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put("Content-Type", Collections.singletonList("application/soap+xml;charset=UTF-8"));
         requestContext.put(Message.PROTOCOL_HEADERS, headers);
@@ -194,10 +198,19 @@ public class CXFWSManClient implements WSManClient {
         Enumerate enumerate = new Enumerate();
         enumerate.setFilter(filterType);
 
+        ObjectFactory factory = new ObjectFactory();
+
         if (optimized) {
             // Request an optimized response
-            JAXBElement<AttributableEmpty> optimizeEnumeration = new ObjectFactory().createOptimizeEnumeration(new AttributableEmpty());
+            JAXBElement<AttributableEmpty> optimizeEnumeration = factory.createOptimizeEnumeration(new AttributableEmpty());
             enumerate.getAny().add(optimizeEnumeration);
+        }
+
+        if (m_endpoint.getMaxElements() != null) {
+            AttributablePositiveInteger maxElementsValue = new AttributablePositiveInteger();
+            maxElementsValue.setValue(BigInteger.valueOf(m_endpoint.getMaxElements()));
+            JAXBElement<AttributablePositiveInteger> maxElements = factory.createMaxElements(maxElementsValue);
+            enumerate.getAny().add(maxElements);
         }
 
         return getEnumerator(resourceUri).enumerate(enumerate);
@@ -212,9 +225,11 @@ public class CXFWSManClient implements WSManClient {
             // Request an optimized response
             JAXBElement<AttributableEmpty> optimizeEnumeration = factory.createOptimizeEnumeration(new AttributableEmpty());
             enumerate.getAny().add(optimizeEnumeration);
+        }
 
+        if (m_endpoint.getMaxElements() != null) {
             AttributablePositiveInteger maxElementsValue = new AttributablePositiveInteger();
-            maxElementsValue.setValue(BigInteger.valueOf(20));
+            maxElementsValue.setValue(BigInteger.valueOf(m_endpoint.getMaxElements()));
             JAXBElement<AttributablePositiveInteger> maxElements = factory.createMaxElements(maxElementsValue);
             enumerate.getAny().add(maxElements);
         }

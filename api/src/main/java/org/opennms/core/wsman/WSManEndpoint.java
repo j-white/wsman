@@ -17,6 +17,8 @@ public class WSManEndpoint {
     private final String password;
     private final boolean strictSSL;
     private final WSManVersion serverVersion;
+    private final Integer maxElements;
+    private final Integer maxEnvelopeSize;
 
     private WSManEndpoint(Builder builder) {
         url = builder.url;
@@ -24,6 +26,8 @@ public class WSManEndpoint {
         password = builder.password;
         strictSSL = builder.strictSSL;
         serverVersion = builder.serverVersion;
+        maxElements = builder.maxElements;
+        maxEnvelopeSize = builder.maxEnvelopeSize;
     }
 
     public static class Builder {
@@ -32,6 +36,8 @@ public class WSManEndpoint {
        private String username;
        private String password;
        private WSManVersion serverVersion = WSManVersion.WSMAN_1_2;
+       private Integer maxElements;
+       private Integer maxEnvelopeSize;
 
        public Builder(String url) throws MalformedURLException {
            this(new URL(Objects.requireNonNull(url, "url cannot be null")));
@@ -54,6 +60,22 @@ public class WSManEndpoint {
 
        public Builder withServerVersion(WSManVersion version) {
            this.serverVersion = Objects.requireNonNull(version, "version cannot be null");
+           return this;
+       }
+
+       public Builder withMaxElements(Integer maxElements) {
+           if (maxElements != null && maxElements < 1) {
+               throw new IllegalArgumentException("maxElements must be strictly positive");
+           }
+           this.maxElements = maxElements;
+           return this;
+       }
+
+       public Builder withMaxEnvelopeSize(Integer maxEnvelopeSize) {
+           if (maxEnvelopeSize != null && maxEnvelopeSize < 1) {
+               throw new IllegalArgumentException("maxEnvelopeSize must be strictly positive");
+           }
+           this.maxEnvelopeSize = maxEnvelopeSize;
            return this;
        }
 
@@ -86,13 +108,22 @@ public class WSManEndpoint {
         return serverVersion;
     }
 
+    public Integer getMaxElements() {
+        return maxElements;
+    }
+
+    public Integer getMaxEnvelopeSize() {
+        return maxEnvelopeSize;
+    }
+
     public String toString() {
         return com.google.common.base.Objects.toStringHelper(this)
-            .omitNullValues()
             .add("url", url)
             .add("isBasicAuth", isBasicAuth())
             .add("isStrictSSL", isStrictSSL())
             .add("serverVersion", serverVersion)
+            .add("maxElements", maxElements)
+            .add("maxEnvelopeSize", maxEnvelopeSize)
             .toString();
     }
 }
