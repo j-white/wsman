@@ -14,6 +14,7 @@ import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerateResponse;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.Pull;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;
 
+//TODO: Remove me and use generated bindings?
 @SOAPBinding(parameterStyle = SOAPBinding.ParameterStyle.BARE)
 @BindingType(value="http://www.w3.org/2003/05/soap/bindings/HTTP/")
 //FIXME: We should make addressing required, but we disable it since we can't currently

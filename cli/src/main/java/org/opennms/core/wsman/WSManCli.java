@@ -4,12 +4,14 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
+import org.kohsuke.args4j.spi.MapOptionHandler;
 import org.opennms.core.wsman.WSManEndpoint.WSManVersion;
 import org.opennms.core.wsman.cxf.CXFWSManClientFactory;
 import org.slf4j.Logger;
@@ -32,11 +34,22 @@ public class WSManCli {
     @Option(name="-strictSSL", usage="ssl certificate verification")
     private boolean strictSSL;
 
-    @Option(name="-w", usage="server version")
-    WSManVersion serverVersion = WSManVersion.WSMAN_1_2;
+    public static enum WSManOperation {
+        GET,
+        ENUM
+    }
+
+    @Option(name="-o", usage="operation")
+    WSManOperation operation = WSManOperation.ENUM;
 
     @Option(name="-resourceUri", usage="resource uri")
     private String resourceUri = WSManConstants.CIM_ALL_AVAILABLE_CLASSES;
+
+    @Option(name="-w", usage="server version")
+    WSManVersion serverVersion = WSManVersion.WSMAN_1_2;
+
+    @Option(name="-s", handler=MapOptionHandler.class)
+    Map<String,String> selectors;
 
     @Argument
     private List<String> arguments = new ArrayList<String>();
@@ -55,7 +68,7 @@ public class WSManCli {
 
         try {
             parser.parseArgument(args);
-            if( arguments.isEmpty() ) {
+            if (operation == WSManOperation.ENUM && arguments.isEmpty()) {
                 throw new CmdLineException(parser, Messages.NO_ARGUMENT);
             }
         } catch( CmdLineException e ) {
@@ -83,26 +96,39 @@ public class WSManCli {
         WSManEndpoint endpoint = builder.build();
         LOG.info("Using endpoint: {}", endpoint);
         WSManClient client = clientFactory.getClient(endpoint);
+        
+        if (operation == WSManOperation.ENUM) {
+            for (String wql : arguments) {
+                LOG.info("Enumerating and pulling on '{}' with '{}'...", resourceUri, wql);
+                List<Node> nodes = client.enumerateAndPullUsingFilter(WSManConstants.XML_NS_WQL_DIALECT, wql, resourceUri);
+                LOG.info("Succesfully pulled {} nodes.", nodes.size());
 
-        for (String wql : arguments) {
-            LOG.info("Enumerating and pulling on '{}' with '{}'...", resourceUri, wql);
-            List<Node> nodes = client.enumerateAndPullUsingFilter(WSManConstants.XML_NS_WQL_DIALECT, wql, resourceUri);
-            LOG.info("Succesfully pulled {} nodes.", nodes.size());
-
-            // Dump the list of nodes to stdout
-            for (Node node : nodes) {
-                System.out.printf("%s (%s)\n", node.getLocalName(), node.getNamespaceURI());
-                NodeList children = node.getChildNodes();
-                for (int i = 0; i < children.getLength(); i++) {
-                    Node child = children.item(i);
-                    
-                    if (child.getLocalName() == null) {
-                        continue;
-                    }
-
-                    System.out.printf("\t%s = %s\n", child.getLocalName(), child.getTextContent());
+                // Dump the list of nodes to stdout
+                for (Node node : nodes) {
+                    dumpNodeToStdout(node);
                 }
             }
+        } else if (operation == WSManOperation.GET) {
+            LOG.info("Issuing a GET on '{}' with selectors {}", resourceUri, selectors);
+            Node node = client.get(selectors, resourceUri);
+            LOG.info("GET successful.");
+
+            // Dump the node to stdout
+            dumpNodeToStdout(node);
+        }
+    }
+    
+    private static void dumpNodeToStdout(Node node) {
+        System.out.printf("%s (%s)\n", node.getLocalName(), node.getNamespaceURI());
+        NodeList children = node.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            
+            if (child.getLocalName() == null) {
+                continue;
+            }
+
+            System.out.printf("\t%s = %s\n", child.getLocalName(), child.getTextContent());
         }
     }
 }

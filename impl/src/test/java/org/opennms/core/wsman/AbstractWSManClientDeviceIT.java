@@ -1,9 +1,12 @@
 package org.opennms.core.wsman;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -17,6 +20,8 @@ import org.w3c.dom.Node;
 
 import com.mycila.xmltool.XMLDoc;
 import com.mycila.xmltool.XMLTag;
+
+import wiremock.com.google.common.collect.Maps;
 
 /**
  * This test connects to an iDrac device using the properties
@@ -54,5 +59,18 @@ public abstract class AbstractWSManClientDeviceIT {
         XMLTag tag = XMLDoc.from(powerSupplies.get(0), true);
         int inputVoltage = Integer.valueOf(tag.gotoChild("n1:InputVoltage").getText());
         assertEquals(120, inputVoltage);
+    }
+
+    @Test
+    public void canGetSystemPrimaryStatus() throws FileNotFoundException, IOException {
+        Map<String, String> selectors = Maps.newHashMap();
+        selectors.put("CreationClassName", "DCIM_ComputerSystem");
+        selectors.put("Name", "srv:system");
+        Node node = client.get(selectors, "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem");
+        assertNotNull(node);
+
+        XMLTag tag = XMLDoc.from(node, true);
+        int primaryStatus = Integer.valueOf(tag.gotoChild("n1:PrimaryStatus").getText());
+        assertEquals(1, primaryStatus);
     }
 }

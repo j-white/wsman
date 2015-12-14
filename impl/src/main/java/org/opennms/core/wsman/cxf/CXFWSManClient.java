@@ -8,12 +8,16 @@ import java.util.stream.Collectors;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.transform.dom.DOMResult;
 import javax.xml.ws.BindingProvider;
 
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.frontend.ClientProxy;
+import org.apache.cxf.interceptor.transform.TransformInInterceptor;
 import org.apache.cxf.interceptor.transform.TransformOutInterceptor;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
 import org.apache.cxf.transport.http.HTTPConduit;
@@ -22,7 +26,6 @@ import org.apache.cxf.ws.addressing.AddressingProperties;
 import org.apache.cxf.ws.addressing.AttributedURIType;
 import org.apache.cxf.ws.addressing.EndpointReferenceType;
 import org.opennms.core.wsman.WSManClient;
-import org.opennms.core.wsman.WSManConstants;
 import org.opennms.core.wsman.WSManEndpoint;
 import org.opennms.core.wsman.WSManEndpoint.WSManVersion;
 import org.opennms.core.wsman.WSManException;
@@ -36,6 +39,7 @@ import org.xmlsoap.schemas.ws._2004._09.enumeration.FilterType;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.ItemListType;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.Pull;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;
+import org.xmlsoap.schemas.ws._2004._09.transfer.TransferElement;
 
 import com.google.common.collect.Maps;
 
@@ -52,17 +56,19 @@ public class CXFWSManClient implements WSManClient {
         m_endpoint = Objects.requireNonNull(endpoint, "endpoint cannot be null");
     }
 
-    public EnumerationOperations getEnumerator(String resourceUri) {
+    public <ProxyServiceType> ProxyServiceType createProxyFor(Class<ProxyServiceType> serviceClass,
+            String resourceUri,
+            Map<String, String> outTransformMap, Map<String, String> inTransformMap) {
         JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
-        factory.setServiceClass(EnumerationOperations.class);
+        factory.setServiceClass(serviceClass);
         factory.setAddress(m_endpoint.getUrl().toExternalForm());
 
         // Force the client to use SOAP v1.2, as per:
         // R13.1-1: A service shall at least receive and send SOAP 1.2 SOAP Envelopes.
         factory.setBindingId("http://schemas.xmlsoap.org/wsdl/soap12/");
-        EnumerationOperations enumerator = factory.create(EnumerationOperations.class);
+        ProxyServiceType proxyService = factory.create(serviceClass);
 
-        Client cxfClient = ClientProxy.getClient(enumerator);
+        Client cxfClient = ClientProxy.getClient(proxyService);
         Map<String, Object> requestContext = cxfClient.getRequestContext();
 
         // Add static name-space mappings to make visualizing the XML clearer
@@ -117,13 +123,8 @@ public class CXFWSManClient implements WSManClient {
         requestContext.put("javax.xml.ws.addressing.context", maps);
 
         // Add WS-Man ResourceURI to the header
-        AddResourecURIInterceptor interceptor = new AddResourecURIInterceptor(WSManConstants.CIM_ALL_AVAILABLE_CLASSES);
+        AddResourceURIInterceptor interceptor = new AddResourceURIInterceptor(resourceUri);
         cxfClient.getOutInterceptors().add(interceptor);
-
-        // Relocate the Filter element to the WS-Man namespace
-        // Our WSDls generate it one package but the servers expect it to be in the other
-        Map<String, String> outTransformMap = Maps.newHashMap();
-        outTransformMap.put("{http://schemas.xmlsoap.org/ws/2004/09/enumeration}Filter", "{http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd}Filter");
 
         if (m_endpoint.getServerVersion() == WSManVersion.WSMAN_1_0) {
             // WS-Man 1.0 does not support the W3C WS-Addressing, so we need to change the namespace
@@ -137,7 +138,44 @@ public class CXFWSManClient implements WSManClient {
             cxfClient.getOutInterceptors().add(transformOutInterceptor);
         }
 
-        return enumerator;
+        if (!inTransformMap.isEmpty()) {
+            final TransformInInterceptor transformInInterceptor = new TransformInInterceptor();
+            transformInInterceptor.setInTransformElements(inTransformMap);
+            cxfClient.getInInterceptors().add(transformInInterceptor);
+        }
+
+        return proxyService;
+    }
+
+    public EnumerationOperations getEnumerator(String resourceUri) {
+        // Relocate the Filter element to the WS-Man namespace
+        // Our WSDls generate it one package but the servers expect it to be in the other
+        Map<String, String> outTransformMap = Maps.newHashMap();
+        outTransformMap.put("{http://schemas.xmlsoap.org/ws/2004/09/enumeration}Filter", "{http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd}Filter");
+
+        return createProxyFor(EnumerationOperations.class, resourceUri,
+                outTransformMap, Maps.newHashMap());
+    }
+
+    private TransferOperations getTransferer(Map<String, String> selectors, String resourceUri) {
+        // FIXME: This could break
+        String elementType = resourceUri.substring(resourceUri.lastIndexOf("/") + 1);
+
+        // Modify the incoming response to use a generic element instead
+        // of the one provided
+        Map<String, String> inTransformMap = Maps.newHashMap();
+        inTransformMap.put(String.format("{%s}%s", resourceUri, elementType),
+                "{http://schemas.xmlsoap.org/ws/2004/09/transfer}TransferElement");
+
+        TransferOperations transferer = createProxyFor(TransferOperations.class, resourceUri,
+                Maps.newHashMap(), inTransformMap);
+        Client cxfClient = ClientProxy.getClient(transferer);
+
+        // Add WS-Man ResourceURI to the header
+        AddSelectorSetInterceptor interceptor = new AddSelectorSetInterceptor(selectors);
+        cxfClient.getOutInterceptors().add(interceptor);
+
+        return transferer;
     }
 
     private EnumerateResponse enumerate(String dialect, String filter, String resourceUri, boolean optimized) {
@@ -210,5 +248,26 @@ public class CXFWSManClient implements WSManClient {
         // Fallback to pulling
         String contextId = (String)enumerateResponse.getEnumerationContext().getContent().get(0);
         return pull(contextId, resourceUri);
+    }
+
+    @Override
+    public Node get(Map<String, String> selectors, String resourceUri) {
+        TransferOperations transferer = getTransferer(selectors, resourceUri);
+        TransferElement transferElement = transferer.get();
+        if (transferElement == null) {
+            throw new WSManException("Get failed. See logs for details.");
+        }
+
+        // FIXME: Convert the transfer element back to it's original type
+        // Convert the TransferElement to a generic node
+        DOMResult res = new DOMResult();
+        JAXBContext context;
+        try {
+            context = JAXBContext.newInstance(transferElement.getClass());
+            context.createMarshaller().marshal(transferElement, res);
+            return res.getNode().getFirstChild();
+        } catch (JAXBException e) {
+            throw new WSManException("XML serialization failed.", e);
+        }
     }
 }

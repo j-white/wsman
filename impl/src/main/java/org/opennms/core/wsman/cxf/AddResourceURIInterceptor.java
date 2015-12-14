@@ -1,6 +1,7 @@
 package org.opennms.core.wsman.cxf;
 
 import java.util.List;
+import java.util.Objects;
 
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
@@ -16,14 +17,14 @@ import org.apache.cxf.phase.Phase;
 import schemas.dmtf.org.wbem.wsman.v1.AttributableURI;
 import schemas.dmtf.org.wbem.wsman.v1.ObjectFactory;
 
-public class AddResourecURIInterceptor extends AbstractSoapInterceptor {
+public class AddResourceURIInterceptor extends AbstractSoapInterceptor {
 
-    private final String resourceUri;
+    private final String m_resourceUri;
 
-    public AddResourecURIInterceptor(String resourceUri) {
+    public AddResourceURIInterceptor(String resourceUri) {
         super(Phase.POST_LOGICAL);
         addAfter(SoapPreProtocolOutInterceptor.class.getName());
-        this.resourceUri = resourceUri;
+        m_resourceUri = Objects.requireNonNull(resourceUri, "resourceUri cannot be null");
     }
 
     @Override
@@ -31,7 +32,7 @@ public class AddResourecURIInterceptor extends AbstractSoapInterceptor {
        List<Header> headers = message.getHeaders();
 
         AttributableURI uri = new AttributableURI();
-        uri.setValue(resourceUri);
+        uri.setValue(m_resourceUri);
         ObjectFactory f = new ObjectFactory();
         JAXBElement<AttributableURI> resourceURI = f.createResourceURI(uri);
 

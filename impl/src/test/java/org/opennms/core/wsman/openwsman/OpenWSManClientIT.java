@@ -12,6 +12,6 @@ public class OpenWSManClientIT extends AbstractWSManClientIT {
 
     @Test
     public void canEnumerateAndPullUsingWQLFilter() throws InterruptedException {
-        // Psas. Not yet implemented
+        // Pass. Not yet implemented
     }
 }

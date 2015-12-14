@@ -5,6 +5,7 @@ import java.io.StringReader;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -96,18 +97,9 @@ public class OpenWSManClient implements WSManClient {
         if ((result == null) || result.isFault()) {
             throw new WSManException("Pull failed: " + ((result != null) ? result.fault().reason() : "?"));
         } else {
-            // We need to return a list of Nodes from the SOAP message body
-            // OpenWSMan gives us the whole SOAP response in their own XML wrappers
-            // so we re-encode it, and parse it out again
-            String xml = result.encode("UTF-8");
             try {
-                // Parse th SOAP response
-                MessageFactory factory = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL);
-                SOAPMessage message;
-                message = factory.createMessage(
-                        new MimeHeaders(),
-                        new ByteArrayInputStream(xml.getBytes(Charset
-                                .forName("UTF-8"))));
+                // Parse the SOAP response
+                SOAPMessage message = getSoapMessage(result);
                 
                 // Now grab the items from the body
                 SOAPBody body = message.getSOAPBody();
@@ -131,6 +123,50 @@ public class OpenWSManClient implements WSManClient {
     @Override
     public List<Node> enumerateAndPullUsingFilter(String dialect, String filter, String resourceUri) {
         return pull(enumerateWithFilter(dialect, filter, resourceUri), resourceUri);
+    }
+
+    @Override
+    public Node get(Map<String, String> selectors, String resourceUri) {
+        final Client client = getClient();
+        final ClientOptions options = getClientOptions();
+
+        // Copy the selectors to the client options
+        selectors.entrySet().stream()
+            .forEach(e -> options.add_selector(e.getKey(), e.getValue()));
+
+        XmlDoc result = client.get(options, resourceUri);
+        if ((result == null) || result.isFault()) {
+            throw new WSManException("Get failed: " + ((result != null) ? result.fault().reason() : "?"));
+        } else {
+            try {
+                // Parse the SOAP response
+                SOAPMessage message = getSoapMessage(result);
+
+                // Now grab the items from the body
+                SOAPBody body = message.getSOAPBody();
+
+                // Re-encode it so that it's 'disconnected' from the XML tree
+                String innerXml = innerXml(body).trim();
+                Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+                        .parse(new InputSource(new StringReader(innerXml)));
+                return doc;
+            } catch (IOException | SOAPException | SAXException | ParserConfigurationException e) {
+                throw new WSManException("Failed to parse OpenWSMan's XML output.", e);
+            }
+        }
+    }
+
+    public static SOAPMessage getSoapMessage(XmlDoc doc) throws IOException, SOAPException {
+        // We need to return the node from the SOAP message body
+        // OpenWSMan gives us the whole SOAP response in their own XML wrappers
+        // so we re-encode it, and parse it out again
+        String xml = doc.encode("UTF-8").trim();
+        // Parse the SOAP response
+        MessageFactory factory = MessageFactory.newInstance(SOAPConstants.SOAP_1_2_PROTOCOL);
+        return factory.createMessage(
+                new MimeHeaders(),
+                new ByteArrayInputStream(xml.getBytes(Charset
+                        .forName("UTF-8"))));
     }
 
     public static String innerXml(Node node) {

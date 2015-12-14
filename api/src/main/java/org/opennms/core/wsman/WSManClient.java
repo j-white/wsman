@@ -1,10 +1,20 @@
 package org.opennms.core.wsman;
 
 import java.util.List;
+import java.util.Map;
 
 import org.w3c.dom.Node;
 
 public interface WSManClient {
+
+    /**
+     * Retrieves a single element using the provided selectors.
+     *
+     * @param selectors
+     * @param resourceUri
+     * @return
+     */
+    Node get(Map<String, String> selectors, String resourceUri);
 
     /**
      * Starts a new enumeration session with a filter.

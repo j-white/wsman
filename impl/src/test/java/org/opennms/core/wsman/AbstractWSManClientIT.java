@@ -12,13 +12,19 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.mycila.xmltool.XMLDoc;
 import com.mycila.xmltool.XMLTag;
 
+import wiremock.com.google.common.collect.Maps;
+
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
@@ -111,7 +117,28 @@ public abstract class AbstractWSManClientIT {
         int inputVoltage = Integer.valueOf(tag.gotoChild("n1:InputVoltage").getText());
         assertEquals(120, inputVoltage);
     }
-    
+
+    @Test
+    public void canGet() throws FileNotFoundException, IOException {
+        stubFor(post(urlEqualTo("/wsman"))
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", "Content-Type: application/soap+xml; charset=utf-8")
+                    .withBodyFile("get-response.xml")));
+
+        Map<String, String> selectors = Maps.newHashMap();
+        selectors.put("CreationClassName", "DCIM_ComputerSystem");
+        selectors.put("Name", "srv:system");
+        Node node = client.get(selectors, "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem");
+
+        dumpRequestsToStdout();
+
+        assertNotNull(node);
+
+        XMLTag tag = XMLDoc.from(node, true);
+        int primaryStatus = Integer.valueOf(tag.gotoChild("n1:PrimaryStatus").getText());
+        assertEquals(1, primaryStatus);
+    }
+
     private void dumpRequestsToStdout() {
         findAll(postRequestedFor(urlMatching("/.*"))).forEach(r -> System.out.println(prettyFormat(r.getBodyAsString(), 4)));
     }

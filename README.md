@@ -127,3 +127,79 @@ General WSMAN info http://en.community.dell.com/techcenter/systems-management/w/
    </s:Body>
 </s:Envelope>
 ```
+
+### Get Request
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd">
+   <s:Header>
+      <wsa:Action s:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/Get</wsa:Action>
+      <wsa:To s:mustUnderstand="true">https://127.0.0.1:4443/wsman</wsa:To>
+      <wsman:ResourceURI s:mustUnderstand="true">http://schemas.dell.com/wbem/wscim/1/cim-schema/2/root/dcim/DCIM_ComputerSystem</wsman:ResourceURI>
+      <wsa:MessageID s:mustUnderstand="true">uuid:c400f551-26de-16de-8002-303180ea2ae8</wsa:MessageID>
+      <wsa:ReplyTo>
+         <wsa:Address>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>
+      </wsa:ReplyTo>
+      <wsman:SelectorSet>
+         <wsman:Selector Name="CreationClassName">DCIM_ComputerSystem</wsman:Selector>
+         <wsman:Selector Name="Name">srv:system</wsman:Selector>
+      </wsman:SelectorSet>
+   </s:Header>
+   <s:Body />
+</s:Envelope>
+```
+
+### Get Response
+
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<s:Envelope xmlns:s="http://www.w3.org/2003/05/soap-envelope" xmlns:n1="http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+   <s:Header>
+      <wsa:To>http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>
+      <wsa:Action>http://schemas.xmlsoap.org/ws/2004/09/transfer/GetResponse</wsa:Action>
+      <wsa:RelatesTo>uuid:c400f551-26de-16de-8002-303180ea2ae8</wsa:RelatesTo>
+      <wsa:MessageID>uuid:937cf719-26da-16da-8107-c115cfb5fe14</wsa:MessageID>
+   </s:Header>
+   <s:Body>
+      <n1:DCIM_ComputerSystem>
+         <n1:AvailableRequestedStates xsi:nil="true" />
+         <n1:Caption xsi:nil="true" />
+         <n1:CommunicationStatus xsi:nil="true" />
+         <n1:CreationClassName>DCIM_ComputerSystem</n1:CreationClassName>
+         <n1:Dedicated>0</n1:Dedicated>
+         <n1:Description xsi:nil="true" />
+         <n1:DetailedStatus xsi:nil="true" />
+         <n1:ElementName>Computer System</n1:ElementName>
+         <n1:EnabledDefault>2</n1:EnabledDefault>
+         <n1:EnabledState>2</n1:EnabledState>
+         <n1:HealthState>5</n1:HealthState>
+         <n1:IdentifyingDescriptions>CIM:GUID</n1:IdentifyingDescriptions>
+         <n1:IdentifyingDescriptions>CIM:Tag</n1:IdentifyingDescriptions>
+         <n1:IdentifyingDescriptions>DCIM:ServiceTag</n1:IdentifyingDescriptions>
+         <n1:InstallDate xsi:nil="true" />
+         <n1:Name>srv:system</n1:Name>
+         <n1:NameFormat xsi:nil="true" />
+         <n1:OperatingStatus xsi:nil="true" />
+         <n1:OperationalStatus>2</n1:OperationalStatus>
+         <n1:OperationalStatus>3</n1:OperationalStatus>
+         <n1:OtherDedicatedDescriptions xsi:nil="true" />
+         <n1:OtherEnabledState xsi:nil="true" />
+         <n1:OtherIdentifyingInfo>ANONYMIZED01</n1:OtherIdentifyingInfo>
+         <n1:OtherIdentifyingInfo>mainsystemchassis</n1:OtherIdentifyingInfo>
+         <n1:OtherIdentifyingInfo>ANONYMIZED02</n1:OtherIdentifyingInfo>
+         <n1:PowerManagementCapabilities xsi:nil="true" />
+         <n1:PrimaryOwnerContact xsi:nil="true" />
+         <n1:PrimaryOwnerName xsi:nil="true" />
+         <n1:PrimaryStatus>1</n1:PrimaryStatus>
+         <n1:RequestedState>0</n1:RequestedState>
+         <n1:ResetCapability xsi:nil="true" />
+         <n1:Roles xsi:nil="true" />
+         <n1:Status xsi:nil="true" />
+         <n1:StatusDescriptions xsi:nil="true" />
+         <n1:TimeOfLastStateChange xsi:nil="true" />
+         <n1:TransitioningToState>12</n1:TransitioningToState>
+      </n1:DCIM_ComputerSystem>
+   </s:Body>
+</s:Envelope>
+```
