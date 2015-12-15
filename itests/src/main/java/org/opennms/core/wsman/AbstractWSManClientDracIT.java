@@ -40,12 +40,12 @@ import wiremock.com.google.common.collect.Maps;
 
 /**
  * This test connects to an iDrac device using the properties
- * store in ~/wsman.properties.
+ * stored in ~/wsman.properties.
  *
  * @author jwhite
  */
-public abstract class AbstractWSManClientDeviceIT {
-    private final static Logger LOG = LoggerFactory.getLogger(AbstractWSManClientDeviceIT.class);
+public abstract class AbstractWSManClientDracIT {
+    private final static Logger LOG = LoggerFactory.getLogger(AbstractWSManClientDracIT.class);
 
     private WSManClient client;
 

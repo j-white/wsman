@@ -22,6 +22,12 @@ package org.opennms.core.wsman;
  */
 public class WSManConstants {
 
+    public static final String XML_NS_DMTF_WSMAN_V1 = "http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd";
+
+    public static final String XML_NS_WS_2004_08_ADDRESSING = "http://schemas.xmlsoap.org/ws/2004/08/addressing";
+
+    public static final String XML_NS_WS_2004_09_ENUMERATION = "http://schemas.xmlsoap.org/ws/2004/09/enumeration";
+
     public static final String XML_NS_WQL_DIALECT =  "http://schemas.microsoft.com/wbem/wsman/1/WQL";
 
     public static final String CIM_ALL_AVAILABLE_CLASSES = "http://schemas.dmtf.org/wbem/wscim/1/*";
