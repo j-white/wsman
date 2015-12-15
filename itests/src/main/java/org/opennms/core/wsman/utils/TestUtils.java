@@ -36,13 +36,12 @@ public class TestUtils {
             String protocol = prop.getProperty("protocol" , "https");
 
             String url = String.format("%s://%s:%d%s", protocol, hostname, port, path);
-            
+
             return new WSManEndpoint.Builder(url)
                         .withBasicAuth(prop.getProperty("username" , "admin"), prop.getProperty("password" , "admin"))
                         .withStrictSSL(false)
                         .withServerVersion(WSManVersion.WSMAN_1_0)
-                        // FIXME: This break the Windows tests
-                        //.withMaxElements(25)
+                        .withMaxElements(25)
                         .build();
         }
     }

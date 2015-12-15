@@ -130,7 +130,7 @@ public class CXFWSManClient implements WSManClient {
     private EnumerateResponse enumerate(String resourceUri, String dialect, String filter, boolean optimized) {
         // Create the enumeration request
         Enumerate enumerate = new Enumerate();
-        
+
         // If a filter was set, then add it to the request
         if (dialect != null && filter != null) {
             FilterType filterType = new FilterType();
@@ -200,6 +200,11 @@ public class CXFWSManClient implements WSManClient {
         EnumerationContextType enumContext = new EnumerationContextType();
         enumContext.getContent().add(contextId);
         pull.setEnumerationContext(enumContext);
+
+        // Optionally specific the maximum number of elements to return
+        if (m_endpoint.getMaxElements() != null) {
+            pull.setMaxElements(BigInteger.valueOf(m_endpoint.getMaxElements()));
+        }
 
         // Issue the pull
         PullResponse pullResponse = getEnumerator(resourceUri).pull(pull);
