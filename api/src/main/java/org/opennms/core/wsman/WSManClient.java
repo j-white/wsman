@@ -32,11 +32,12 @@ public interface WSManClient {
     /**
      * Retrieves a single element using the provided selectors.
      *
-     * @param selectors
      * @param resourceUri
-     * @return
+     * @param selectors
+     * @return the requested node, otherwise an exception is thrown
+     * @throw WSManException
      */
-    Node get(Map<String, String> selectors, String resourceUri);
+    Node get(String resourceUri, Map<String, String> selectors);
 
     /**
      * Starts a new enumeration context.
@@ -49,53 +50,49 @@ public interface WSManClient {
     /**
      * Starts a new enumeration context using a filter.
      *
+     * @param resourceUri
      * @param dialect
      * @param filter
-     * @param resourceUri
      * @return context id
      */
-    public String enumerateWithFilter(String dialect, String filter, String resourceUri);
+    public String enumerateWithFilter(String resourceUri, String dialect, String filter);
 
     /**
-     * FIXME: Wrong doc.
-     * 
-     * Pulls the objects from an existing enumeration context.
+     * Pulls elements from an existing enumeration context.
      *
      * @param contextId the context id
      * @param resourceUri
+     * @param nodes existing list in which the pulled elements will be added
      * @param recursive when true, the implementation will continue to pull
      * until the 'EndOfSequence' is reached
-     * @return
+     * @return the next context id, when pulling recursively this will be null
      */
     public String pull(String contextId, String resourceUri, List<Node> nodes, boolean recursive);
 
     /**
-     * FIXME: Wrong doc.
-     * 
      * Optimized version of the enumerate and pull operations.
      *
      * The implementation should attempt to consolidate the calls, using optimized enumeration.
      *
      * @param resourceUri
+     * @param nodes existing list in which the pulled elements will be added
      * @param recursive when true, the implementation will continue to pull
      * until the 'EndOfSequence' is reached
-     * @return
+     * @return the next context id, when pulling recursively this will be null
      */
     public String enumerateAndPull(String resourceUri, List<Node> nodes, boolean recursive);
 
     /**
-     * FIXME: Wrong doc.
-     * 
      * Optimized version of the enumerate and pull operations.
      *
      * The implementation should attempt to consolidate the calls, using optimized enumeration.
      *
+     * @param resourceUri
      * @param dialect
      * @param filter
-     * @param resourceUri
      * @param recursive when true, the implementation will continue to pull
      * until the 'EndOfSequence' is reached
-     * @return
+     * @return the next context id, when pulling recursively this will be null
      */
-    public String enumerateAndPullUsingFilter(String dialect, String filter, String resourceUri, List<Node> nodes, boolean recursive);
+    public String enumerateAndPullUsingFilter(String resourceUri, String dialect, String filter, List<Node> nodes, boolean recursive);
 }

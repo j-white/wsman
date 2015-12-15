@@ -119,7 +119,7 @@ public class WSManCli {
             } else {
                 for (String wql : arguments) {
                     LOG.info("Enumerating and pulling on '{}' with '{}'...", resourceUri, wql);
-                    client.enumerateAndPullUsingFilter(WSManConstants.XML_NS_WQL_DIALECT, wql, resourceUri, nodes, true);
+                    client.enumerateAndPullUsingFilter(resourceUri, WSManConstants.XML_NS_WQL_DIALECT, wql, nodes, true);
                     LOG.info("Succesfully pulled {} nodes.", nodes.size());
                 }
             }
@@ -130,7 +130,7 @@ public class WSManCli {
             }
         } else if (operation == WSManOperation.GET) {
             LOG.info("Issuing a GET on '{}' with selectors {}", resourceUri, selectors);
-            Node node = client.get(selectors, resourceUri);
+            Node node = client.get(resourceUri, selectors);
             LOG.info("GET successful.");
 
             // Dump the node to stdout

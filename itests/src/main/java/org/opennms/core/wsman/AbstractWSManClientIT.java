@@ -91,9 +91,9 @@ public abstract class AbstractWSManClientIT {
                     .withBodyFile("enum-response.xml")));
 
         String contextId = client.enumerateWithFilter(
+                WSManConstants.CIM_ALL_AVAILABLE_CLASSES,
                 WSManConstants.XML_NS_WQL_DIALECT,
-                "select DeviceDescription,PrimaryStatus,TotalOutputPower,InputVoltage,Range1MaxInputPower,FirmwareVersion,RedundancyStatus from DCIM_PowerSupplyView where DetailedState != 'Absent' and PrimaryStatus != 0",
-                WSManConstants.CIM_ALL_AVAILABLE_CLASSES);
+                "select DeviceDescription,PrimaryStatus,TotalOutputPower,InputVoltage,Range1MaxInputPower,FirmwareVersion,RedundancyStatus from DCIM_PowerSupplyView where DetailedState != 'Absent' and PrimaryStatus != 0");
 
         dumpRequestsToStdout();
 
@@ -158,9 +158,9 @@ public abstract class AbstractWSManClientIT {
                     .withBodyFile("optimized-enum-response.xml")));
 
         List<Node> nodes = Lists.newArrayList();
-        client.enumerateAndPullUsingFilter(WSManConstants.XML_NS_WQL_DIALECT,
+        client.enumerateAndPullUsingFilter(WSManConstants.CIM_ALL_AVAILABLE_CLASSES,
                 "select DeviceDescription,PrimaryStatus,TotalOutputPower,InputVoltage,Range1MaxInputPower,FirmwareVersion,RedundancyStatus from DCIM_PowerSupplyView where DetailedState != 'Absent' and PrimaryStatus != 0",
-                WSManConstants.CIM_ALL_AVAILABLE_CLASSES,
+                WSManConstants.XML_NS_WQL_DIALECT,
                 nodes,
                 false);
 
@@ -183,7 +183,7 @@ public abstract class AbstractWSManClientIT {
         Map<String, String> selectors = Maps.newHashMap();
         selectors.put("CreationClassName", "DCIM_ComputerSystem");
         selectors.put("Name", "srv:system");
-        Node node = client.get(selectors, "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem");
+        Node node = client.get("http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem", selectors);
 
         dumpRequestsToStdout();
 

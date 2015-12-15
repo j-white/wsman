@@ -94,7 +94,7 @@ public class OpenWSManClient implements WSManClient {
     }
 
     @Override
-    public String enumerateWithFilter(String dialect, String filter, String resourceUri) {
+    public String enumerateWithFilter(String resourceUri, String dialect, String filter) {
         final Client client = getClient();
         final ClientOptions options = getClientOptions();
 
@@ -145,12 +145,12 @@ public class OpenWSManClient implements WSManClient {
     }
 
     @Override
-    public String enumerateAndPullUsingFilter(String dialect, String filter, String resourceUri, List<Node> nodes, boolean recursive) {
-        return pull(enumerateWithFilter(dialect, filter, resourceUri), resourceUri, nodes, recursive);
+    public String enumerateAndPullUsingFilter(String resourceUri, String dialect, String filter, List<Node> nodes, boolean recursive) {
+        return pull(enumerateWithFilter(resourceUri, dialect, filter), resourceUri, nodes, recursive);
     }
 
     @Override
-    public Node get(Map<String, String> selectors, String resourceUri) {
+    public Node get(String resourceUri, Map<String, String> selectors) {
         final Client client = getClient();
         final ClientOptions options = getClientOptions();
 

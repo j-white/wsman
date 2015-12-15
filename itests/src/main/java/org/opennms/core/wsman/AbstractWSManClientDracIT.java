@@ -68,9 +68,9 @@ public abstract class AbstractWSManClientDracIT {
     public void canGetInputVoltage() {
         List<Node> powerSupplies = Lists.newLinkedList();
         client.enumerateAndPullUsingFilter(
+                WSManConstants.CIM_ALL_AVAILABLE_CLASSES,
                 WSManConstants.XML_NS_WQL_DIALECT,
                 "select DeviceDescription,PrimaryStatus,TotalOutputPower,InputVoltage,Range1MaxInputPower,FirmwareVersion,RedundancyStatus from DCIM_PowerSupplyView where DetailedState != 'Absent' and PrimaryStatus != 0",
-                WSManConstants.CIM_ALL_AVAILABLE_CLASSES,
                 powerSupplies,
                 true);
         assertEquals(1, powerSupplies.size());
@@ -84,11 +84,16 @@ public abstract class AbstractWSManClientDracIT {
     public void canGetSystemPrimaryStatus() throws FileNotFoundException, IOException {
         Map<String, String> selectors = Maps.newHashMap();
         selectors.put("CreationClassName", "DCIM_ComputerSystem");
-        selectors.put("Name", "srv:system!");
-        Node node = client.get(selectors, "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem");
+        selectors.put("Name", "srv:system");
+        Node node = client.get("http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem", selectors);
         assertNotNull(node);
 
+        assertEquals("DCIM_ComputerSystem", node.getLocalName());
+        assertEquals("http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem", node.getNamespaceURI());
+
         XMLTag tag = XMLDoc.from(node, true);
+        System.err.println(tag.getCurrentTagName());
+        System.err.println(tag);
         int primaryStatus = Integer.valueOf(tag.gotoChild("n1:PrimaryStatus").getText());
         assertEquals(1, primaryStatus);
     }

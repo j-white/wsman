@@ -51,6 +51,7 @@ import org.opennms.core.wsman.WSManException;
 import org.opennms.core.wsman.WSManVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.Enumerate;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerateResponse;
@@ -106,9 +107,7 @@ public class CXFWSManClient implements WSManClient {
         return enumerator;
     }
 
-    public TransferOperations getTransferer(String resourceUri, Map<String, String> selectors) {
-        String elementType = TypeUtils.getElementTypeFromResourceUri(resourceUri);
-
+    public TransferOperations getTransferer(String resourceUri, String elementType, Map<String, String> selectors) {
         // Modify the incoming response to use a generic element instead of the one provided
         // The JAX-WS implementation excepts the element types to match those in specified
         // by the annotated interface, but these are subject to change for every call we make
@@ -183,8 +182,8 @@ public class CXFWSManClient implements WSManClient {
     }
 
     @Override
-    public String enumerateWithFilter(String dialect, String filter, String resourceUri) {
-        EnumerateResponse response = enumerate(dialect, filter, resourceUri, false);
+    public String enumerateWithFilter(String resourceUri, String dialect, String filter) {
+        EnumerateResponse response = enumerate(resourceUri, dialect, filter, false);
         if (response == null) {
             throw new WSManException("Enumeration failed. See logs for details.");
         }
@@ -237,27 +236,32 @@ public class CXFWSManClient implements WSManClient {
     }
 
     @Override
-    public String enumerateAndPullUsingFilter(String dialect, String filter, String resourceUri, List<Node> nodes, boolean recursive) {
+    public String enumerateAndPullUsingFilter(String resourceUri, String dialect, String filter, List<Node> nodes, boolean recursive) {
         return enumerateAndPull(resourceUri, dialect, filter, nodes, recursive);
     }
 
     @Override
-    public Node get(Map<String, String> selectors, String resourceUri) {
-        TransferOperations transferer = getTransferer(resourceUri, selectors);
+    public Node get(String resourceUri, Map<String, String> selectors) {
+        String elementType = TypeUtils.getElementTypeFromResourceUri(resourceUri);
+        TransferOperations transferer = getTransferer(resourceUri, elementType, selectors);
         TransferElement transferElement = transferer.get();
         if (transferElement == null) {
             // Note that fault should be thrown if the object doesn't exist
             throw new WSManException("Get failed. See logs for details.");
         }
 
-        // FIXME: Convert the transfer element back to it's original type
         // Convert the TransferElement to a generic node
-        DOMResult res = new DOMResult();
+        DOMResult domResult = new DOMResult();
         JAXBContext context;
         try {
             context = JAXBContext.newInstance(transferElement.getClass());
-            context.createMarshaller().marshal(transferElement, res);
-            return res.getNode().getFirstChild();
+            context.createMarshaller().marshal(transferElement, domResult);
+
+            // Convert the transfer element back to it's original type
+            Document doc = (Document)domResult.getNode();
+            Node node = doc.getFirstChild();
+            doc.renameNode(node, resourceUri, elementType);
+            return doc.getFirstChild();
         } catch (JAXBException e) {
             throw new WSManException("XML serialization failed.", e);
         }
@@ -333,7 +337,7 @@ public class CXFWSManClient implements WSManClient {
         maps.setReplyTo(ref);
         maps.setFaultTo(ref);
         requestContext.put("javax.xml.ws.addressing.context", maps);
-        
+
         if (m_endpoint.getServerVersion() == WSManVersion.WSMAN_1_0) {
             // WS-Man 1.0 does not support the W3C WS-Addressing, so we need to change the namespace
             // "http://www.w3.org/2005/08/addressing" becomes "http://schemas.xmlsoap.org/ws/2004/08/addressing"

@@ -33,6 +33,12 @@ public class TypeUtils {
         // The content of the EnumerationContext should contain a single string, the context id
         if (context.getContent() == null) {
             throw new WSManException(String.format("EnumerationContext %s has no content.", context));
+        }
+
+        if (context.getContent().size() == 0) {
+            // The EnumerationContext can be empty if we issue an optimized enumeration
+            // and all of the records are immediately returned
+            return null;
         } else if (context.getContent().size() == 1) {
             Object content = context.getContent().get(0);
             if (content instanceof String) {
