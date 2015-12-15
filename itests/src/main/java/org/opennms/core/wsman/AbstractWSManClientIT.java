@@ -28,6 +28,7 @@ import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.mycila.xmltool.XMLDoc;
 import com.mycila.xmltool.XMLTag;
 
+import wiremock.com.google.common.collect.Lists;
 import wiremock.com.google.common.collect.Maps;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -106,7 +107,8 @@ public abstract class AbstractWSManClientIT {
                     .withHeader("Content-Type", "Content-Type: application/soap+xml; charset=utf-8")
                     .withBodyFile("pull-response.xml")));
 
-        List<Node> nodes = client.pull("c6595ee1-2664-1664-801f-c115cfb5fe14", WSManConstants.CIM_ALL_AVAILABLE_CLASSES, false);
+        List<Node> nodes = Lists.newArrayList();
+        client.pull("c6595ee1-2664-1664-801f-c115cfb5fe14", WSManConstants.CIM_ALL_AVAILABLE_CLASSES, nodes, false);
 
         dumpRequestsToStdout();
 
@@ -132,7 +134,8 @@ public abstract class AbstractWSManClientIT {
                     .withHeader("Content-Type", "Content-Type: application/soap+xml; charset=utf-8")
                     .withBodyFile("recursive-pull-response-2.xml")));
 
-        List<Node> nodes = client.pull("c6595ee1-2664-1664-801f-c115cfb5fe14", WSManConstants.CIM_ALL_AVAILABLE_CLASSES, true);
+        List<Node> nodes = Lists.newArrayList();
+        client.pull("c6595ee1-2664-1664-801f-c115cfb5fe14", WSManConstants.CIM_ALL_AVAILABLE_CLASSES, nodes, true);
 
         dumpRequestsToStdout();
 
@@ -154,9 +157,11 @@ public abstract class AbstractWSManClientIT {
                     .withHeader("Content-Type", "Content-Type: application/soap+xml; charset=utf-8")
                     .withBodyFile("optimized-enum-response.xml")));
 
-        List<Node> nodes = client.enumerateAndPullUsingFilter(WSManConstants.XML_NS_WQL_DIALECT,
+        List<Node> nodes = Lists.newArrayList();
+        client.enumerateAndPullUsingFilter(WSManConstants.XML_NS_WQL_DIALECT,
                 "select DeviceDescription,PrimaryStatus,TotalOutputPower,InputVoltage,Range1MaxInputPower,FirmwareVersion,RedundancyStatus from DCIM_PowerSupplyView where DetailedState != 'Absent' and PrimaryStatus != 0",
                 WSManConstants.CIM_ALL_AVAILABLE_CLASSES,
+                nodes,
                 false);
 
         dumpRequestsToStdout();

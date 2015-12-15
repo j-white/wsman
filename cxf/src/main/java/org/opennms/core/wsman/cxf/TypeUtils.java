@@ -10,6 +10,7 @@ import org.opennms.core.wsman.WSManException;
 import org.w3c.dom.Node;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerateResponse;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerationContextType;
+import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;
 
 import schemas.dmtf.org.wbem.wsman.v1.AnyListType;
 
@@ -17,11 +18,23 @@ public class TypeUtils {
 
     protected static String getContextIdFrom(EnumerateResponse response) {
         // A valid response must always include the EnumerationContext element
-        EnumerationContextType enumerationContext = response.getEnumerationContext();
-        
+        return getContextIdFrom(response.getEnumerationContext());
+    }
+
+    protected static String getContextIdFrom(PullResponse response) {
+        if (response.getEnumerationContext() == null) {
+            // The PullResponse will not contain an EnumerationContext if EndOfSequence is set
+            return null;
+        }
+        return getContextIdFrom(response.getEnumerationContext());
+    }
+
+    protected static String getContextIdFrom(EnumerationContextType context) {
         // The content of the EnumerationContext should contain a single string, the context id
-        if (enumerationContext.getContent().size() == 1) {
-            Object content = enumerationContext.getContent().get(0);
+        if (context.getContent() == null) {
+            throw new WSManException(String.format("EnumerationContext %s has no content.", context));
+        } else if (context.getContent().size() == 1) {
+            Object content = context.getContent().get(0);
             if (content instanceof String) {
                 return (String)content;
             } else {
@@ -29,7 +42,7 @@ public class TypeUtils {
             }
         } else {
             throw new WSManException(String.format("EnumerationContext contains too many elements, expected: 1 actual: %d",
-                    enumerationContext.getContent().size()));
+                    context.getContent().size()));
         }
     }
 

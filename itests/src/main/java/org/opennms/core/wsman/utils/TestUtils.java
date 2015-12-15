@@ -41,6 +41,8 @@ public class TestUtils {
                         .withBasicAuth(prop.getProperty("username" , "admin"), prop.getProperty("password" , "admin"))
                         .withStrictSSL(false)
                         .withServerVersion(WSManVersion.WSMAN_1_0)
+                        // FIXME: This break the Windows tests
+                        //.withMaxElements(25)
                         .build();
         }
     }

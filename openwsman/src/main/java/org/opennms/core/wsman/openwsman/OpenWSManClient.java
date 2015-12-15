@@ -48,8 +48,6 @@ import org.w3c.dom.ls.LSSerializer;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.google.common.collect.Lists;
-
 import org.openwsman.OpenWSManConstants;
 
 /**
@@ -116,7 +114,7 @@ public class OpenWSManClient implements WSManClient {
     }
 
     @Override
-    public List<Node> pull(String contextId, String resourceUri, boolean recursive) {
+    public String pull(String contextId, String resourceUri, List<Node> nodes, boolean recursive) {
         final Client client = getClient();
         final ClientOptions options = getClientOptions();
 
@@ -133,14 +131,13 @@ public class OpenWSManClient implements WSManClient {
                 NodeList returnList = body.getElementsByTagName("wsen:Items");
 
                 // Re-encode the items so they are "disconnected" from the DOM tree
-                List<Node> nodes = Lists.newLinkedList();
                 for (int i = 0; i < returnList.getLength(); i++) {
                     String innerXml = innerXml(returnList.item(0)).trim();
                     Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder()
                             .parse(new InputSource(new StringReader(innerXml)));
                     nodes.add(doc);
                 }
-                return nodes;
+                return "TODO";
             } catch (IOException | SOAPException | SAXException | ParserConfigurationException e) {
                 throw new WSManException("Failed to parse OpenWSMan's XML output.", e);
             }
@@ -148,8 +145,8 @@ public class OpenWSManClient implements WSManClient {
     }
 
     @Override
-    public List<Node> enumerateAndPullUsingFilter(String dialect, String filter, String resourceUri, boolean recursive) {
-        return pull(enumerateWithFilter(dialect, filter, resourceUri), resourceUri, recursive   );
+    public String enumerateAndPullUsingFilter(String dialect, String filter, String resourceUri, List<Node> nodes, boolean recursive) {
+        return pull(enumerateWithFilter(dialect, filter, resourceUri), resourceUri, nodes, recursive);
     }
 
     @Override
@@ -213,7 +210,7 @@ public class OpenWSManClient implements WSManClient {
     }
 
     @Override
-    public List<Node> enumerateAndPull(String resourceUri, boolean recursive) {
+    public String enumerateAndPull(String resourceUri, List<Node> nodes, boolean recursive) {
         throw new WSManException("Unsupported.");
     }
 }

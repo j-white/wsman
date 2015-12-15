@@ -33,6 +33,8 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import wiremock.com.google.common.collect.Lists;
+
 public class WSManCli {
     private static Logger LOG = LoggerFactory.getLogger(WSManCli.class);
 
@@ -109,27 +111,22 @@ public class WSManCli {
         WSManClient client = clientFactory.getClient(endpoint);
         
         if (operation == WSManOperation.ENUM) {
-            
+            List<Node> nodes = Lists.newLinkedList();
             if (arguments.isEmpty()) {
                 LOG.info("Enumerating and pulling on '{}'...", resourceUri);
-                List<Node> nodes = client.enumerateAndPull(resourceUri, true);
+                client.enumerateAndPull(resourceUri, nodes , true);
                 LOG.info("Succesfully pulled {} nodes.", nodes.size());
-
-                // Dump the list of nodes to stdout
-                for (Node node : nodes) {
-                    dumpNodeToStdout(node);
-                }
             } else {
                 for (String wql : arguments) {
                     LOG.info("Enumerating and pulling on '{}' with '{}'...", resourceUri, wql);
-                    List<Node> nodes = client.enumerateAndPullUsingFilter(WSManConstants.XML_NS_WQL_DIALECT, wql, resourceUri, true);
+                    client.enumerateAndPullUsingFilter(WSManConstants.XML_NS_WQL_DIALECT, wql, resourceUri, nodes, true);
                     LOG.info("Succesfully pulled {} nodes.", nodes.size());
-
-                    // Dump the list of nodes to stdout
-                    for (Node node : nodes) {
-                        dumpNodeToStdout(node);
-                    }
                 }
+            }
+
+            // Dump the list of nodes to stdout
+            for (Node node : nodes) {
+                dumpNodeToStdout(node);
             }
         } else if (operation == WSManOperation.GET) {
             LOG.info("Issuing a GET on '{}' with selectors {}", resourceUri, selectors);

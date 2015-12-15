@@ -57,6 +57,8 @@ public interface WSManClient {
     public String enumerateWithFilter(String dialect, String filter, String resourceUri);
 
     /**
+     * FIXME: Wrong doc.
+     * 
      * Pulls the objects from an existing enumeration context.
      *
      * @param contextId the context id
@@ -65,9 +67,11 @@ public interface WSManClient {
      * until the 'EndOfSequence' is reached
      * @return
      */
-    public List<Node> pull(String contextId, String resourceUri, boolean recursive);
+    public String pull(String contextId, String resourceUri, List<Node> nodes, boolean recursive);
 
     /**
+     * FIXME: Wrong doc.
+     * 
      * Optimized version of the enumerate and pull operations.
      *
      * The implementation should attempt to consolidate the calls, using optimized enumeration.
@@ -77,9 +81,11 @@ public interface WSManClient {
      * until the 'EndOfSequence' is reached
      * @return
      */
-    public List<Node> enumerateAndPull(String resourceUri, boolean recursive);
+    public String enumerateAndPull(String resourceUri, List<Node> nodes, boolean recursive);
 
     /**
+     * FIXME: Wrong doc.
+     * 
      * Optimized version of the enumerate and pull operations.
      *
      * The implementation should attempt to consolidate the calls, using optimized enumeration.
@@ -91,5 +97,5 @@ public interface WSManClient {
      * until the 'EndOfSequence' is reached
      * @return
      */
-    public List<Node> enumerateAndPullUsingFilter(String dialect, String filter, String resourceUri, boolean recursive);
+    public String enumerateAndPullUsingFilter(String dialect, String filter, String resourceUri, List<Node> nodes, boolean recursive);
 }

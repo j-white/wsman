@@ -36,6 +36,7 @@ import org.w3c.dom.Node;
 import com.mycila.xmltool.XMLDoc;
 import com.mycila.xmltool.XMLTag;
 
+import wiremock.com.google.common.collect.Lists;
 import wiremock.com.google.common.collect.Maps;
 
 /**
@@ -65,10 +66,12 @@ public abstract class AbstractWSManClientDracIT {
 
     @Test
     public void canGetInputVoltage() {
-        List<Node> powerSupplies = client.enumerateAndPullUsingFilter(
+        List<Node> powerSupplies = Lists.newLinkedList();
+        client.enumerateAndPullUsingFilter(
                 WSManConstants.XML_NS_WQL_DIALECT,
                 "select DeviceDescription,PrimaryStatus,TotalOutputPower,InputVoltage,Range1MaxInputPower,FirmwareVersion,RedundancyStatus from DCIM_PowerSupplyView where DetailedState != 'Absent' and PrimaryStatus != 0",
                 WSManConstants.CIM_ALL_AVAILABLE_CLASSES,
+                powerSupplies,
                 true);
         assertEquals(1, powerSupplies.size());
 
@@ -81,7 +84,7 @@ public abstract class AbstractWSManClientDracIT {
     public void canGetSystemPrimaryStatus() throws FileNotFoundException, IOException {
         Map<String, String> selectors = Maps.newHashMap();
         selectors.put("CreationClassName", "DCIM_ComputerSystem");
-        selectors.put("Name", "srv:system");
+        selectors.put("Name", "srv:system!");
         Node node = client.get(selectors, "http://schemas.dell.com/wbem/wscim/1/cim-schema/2/DCIM_ComputerSystem");
         assertNotNull(node);
 

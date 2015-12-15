@@ -43,7 +43,7 @@ import org.apache.cxf.ws.addressing.AddressingProperties;
 import org.apache.cxf.ws.addressing.AttributedURIType;
 import org.apache.cxf.ws.addressing.EndpointReferenceType;
 import org.apache.cxf.ws.addressing.JAXWSAConstants;
-import org.apache.cxf.wsdl.WSAEndpointReferenceUtils;
+import org.apache.cxf.ws.addressing.soap.VersionTransformer;
 import org.opennms.core.wsman.WSManClient;
 import org.opennms.core.wsman.WSManConstants;
 import org.opennms.core.wsman.WSManEndpoint;
@@ -60,7 +60,6 @@ import org.xmlsoap.schemas.ws._2004._09.enumeration.Pull;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;
 import org.xmlsoap.schemas.ws._2004._09.transfer.TransferElement;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import schemas.dmtf.org.wbem.wsman.v1.AttributableEmpty;
@@ -159,21 +158,21 @@ public class CXFWSManClient implements WSManClient {
         return getEnumerator(resourceUri).enumerate(enumerate);
     }
 
-    private List<Node> enumerateAndPull(String resourceUri, String dialect, String filter, boolean recursive) {
+    private String enumerateAndPull(String resourceUri, String dialect, String filter, List<Node> nodes, boolean recursive) {
         EnumerateResponse response = enumerate(resourceUri, dialect, filter, true);
         if (response == null) {
             throw new WSManException("Enumeration failed. See logs for details.");
         }
 
-        List<Node> nodes = Lists.newArrayList();
+        String nextContextId = TypeUtils.getContextIdFrom(response);
         boolean endOfSequence = TypeUtils.getItemsFrom(response, nodes);
 
         if (!endOfSequence) {
-            nodes.addAll(pull(TypeUtils.getContextIdFrom(response), resourceUri, recursive));
+            return pull(TypeUtils.getContextIdFrom(response), resourceUri, nodes, recursive);
         }
-        return nodes;
+        return nextContextId;
     }
-    
+
     @Override
     public String enumerate(String resourceUri) {
         EnumerateResponse response = enumerate(resourceUri, null, null, false);
@@ -193,7 +192,7 @@ public class CXFWSManClient implements WSManClient {
     }
 
     @Override
-    public List<Node> pull(String contextId, String resourceUri, boolean recursive) {
+    public String pull(String contextId, String resourceUri, List<Node> nodes, boolean recursive) {
         // Create the pull request
         Pull pull = new Pull();
 
@@ -209,7 +208,6 @@ public class CXFWSManClient implements WSManClient {
         }
 
         // Collect the results
-        List<Node> nodes = Lists.newArrayList();
         for (Object item : pullResponse.getItems().getAny()) {
             if (item instanceof Node) {
                 nodes.add((Node)item);
@@ -219,22 +217,23 @@ public class CXFWSManClient implements WSManClient {
             }
         }
 
+        String nextContextId = TypeUtils.getContextIdFrom(pullResponse);
         // If we're pulling recursively, and we haven't hit the last element, continue pulling
         if (recursive && pullResponse.getEndOfSequence() == null) {
-            nodes.addAll(pull(contextId, resourceUri, recursive));
+            return pull(nextContextId, resourceUri, nodes, recursive);
         }
 
-        return nodes;
+        return nextContextId;
     }
 
     @Override
-    public List<Node> enumerateAndPull(String resourceUri, boolean recursive) {
-        return enumerateAndPull(resourceUri, null, null, recursive);
+    public String enumerateAndPull(String resourceUri, List<Node> nodes, boolean recursive) {
+        return enumerateAndPull(resourceUri, null, null, nodes, recursive);
     }
 
     @Override
-    public List<Node> enumerateAndPullUsingFilter(String dialect, String filter, String resourceUri, boolean recursive) {
-        return enumerateAndPull(resourceUri, dialect, filter, recursive);
+    public String enumerateAndPullUsingFilter(String dialect, String filter, String resourceUri, List<Node> nodes, boolean recursive) {
+        return enumerateAndPull(resourceUri, dialect, filter, nodes, recursive);
     }
 
     @Override
@@ -242,7 +241,7 @@ public class CXFWSManClient implements WSManClient {
         TransferOperations transferer = getTransferer(resourceUri, selectors);
         TransferElement transferElement = transferer.get();
         if (transferElement == null) {
-            // FIXME: What happens if the object just doesn't exist?
+            // Note that fault should be thrown if the object doesn't exist
             throw new WSManException("Get failed. See logs for details.");
         }
 
@@ -324,12 +323,12 @@ public class CXFWSManClient implements WSManClient {
         AddressingProperties maps = new AddressingProperties();
         EndpointReferenceType ref = new EndpointReferenceType();
         AttributedURIType add = new AttributedURIType();
-        add.setValue(WSAEndpointReferenceUtils.ANONYMOUS_ADDRESS);
+        add.setValue(VersionTransformer.Names200408.WSA_ANONYMOUS_ADDRESS);
         ref.setAddress(add);
         maps.setReplyTo(ref);
         maps.setFaultTo(ref);
         requestContext.put("javax.xml.ws.addressing.context", maps);
-
+        
         if (m_endpoint.getServerVersion() == WSManVersion.WSMAN_1_0) {
             // WS-Man 1.0 does not support the W3C WS-Addressing, so we need to change the namespace
             // "http://www.w3.org/2005/08/addressing" becomes "http://schemas.xmlsoap.org/ws/2004/08/addressing"
