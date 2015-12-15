@@ -13,21 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opennms.core.wsman;
+package org.opennms.core.wsman.openwsman;
 
-/**
- * Generic WS-Man related exception.
- *
- * @author jwhite
- */
-public class WSManException extends RuntimeException {
-    private static final long serialVersionUID = -2894934806760355903L;
+import org.opennms.core.wsman.AbstractWSManClientDeviceIT;
+import org.opennms.core.wsman.WSManClientFactory;
 
-    public WSManException(String message) {
-        super(message);
-    }
-
-    public WSManException(String message, Throwable cause) {
-        super(message, cause);
+public class OpenWSManClientDeviceIT extends AbstractWSManClientDeviceIT {
+    @Override
+    public WSManClientFactory getFactory() {
+        return new OpenWSManClientFactory();
     }
 }

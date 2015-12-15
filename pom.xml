@@ -8,9 +8,14 @@
   <name>OpenNMS :: Core :: WS-Man</name>
 
   <modules>
+    <!-- Core -->
     <module>api</module>
     <module>cli</module>
-    <module>impl</module>
+    <module>itests</module>
+
+    <!-- Implementations -->
+    <module>cxf</module>
+    <module>openwsman</module>
   </modules>
 
   <properties>
@@ -20,6 +25,8 @@
     <args4jVersion>2.32</args4jVersion>
     <xmltoolVersion>4.4.ga</xmltoolVersion>
     <log4jVersion>2.5</log4jVersion>
+    <junitVersion>4.12</junitVersion>
+    <wiremockVersion>1.57</wiremockVersion>
   </properties>
 
   <build>

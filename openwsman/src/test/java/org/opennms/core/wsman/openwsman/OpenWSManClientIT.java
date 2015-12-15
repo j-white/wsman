@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opennms.core.wsman;
+package org.opennms.core.wsman.openwsman;
 
-/**
- * Generic WS-Man related exception.
- *
- * @author jwhite
- */
-public class WSManException extends RuntimeException {
-    private static final long serialVersionUID = -2894934806760355903L;
+import org.junit.Test;
+import org.opennms.core.wsman.AbstractWSManClientIT;
+import org.opennms.core.wsman.WSManClientFactory;
 
-    public WSManException(String message) {
-        super(message);
+public class OpenWSManClientIT extends AbstractWSManClientIT {
+    @Override
+    public WSManClientFactory getFactory() {
+        return new OpenWSManClientFactory();
     }
 
-    public WSManException(String message, Throwable cause) {
-        super(message, cause);
+    @Test
+    public void canEnumerateAndPullUsingWQLFilter() throws InterruptedException {
+        // Pass. Not yet implemented
     }
 }

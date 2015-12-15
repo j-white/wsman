@@ -69,12 +69,7 @@
   <dependencies>
     <dependency>
       <groupId>org.opennms.core.wsman</groupId>
-      <artifactId>org.opennms.core.wsman.api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.opennms.core.wsman</groupId>
-      <artifactId>org.opennms.core.wsman.impl</artifactId>
+      <artifactId>org.opennms.core.wsman.cxf</artifactId>
       <version>${project.version}</version>
     </dependency>
 

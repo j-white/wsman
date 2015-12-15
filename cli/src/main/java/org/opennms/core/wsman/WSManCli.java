@@ -1,3 +1,18 @@
+/*
+ * Copyright 2015, The OpenNMS Group
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *     
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.opennms.core.wsman;
 
 import java.net.MalformedURLException;
@@ -12,7 +27,6 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.kohsuke.args4j.ParserProperties;
 import org.kohsuke.args4j.spi.MapOptionHandler;
-import org.opennms.core.wsman.WSManEndpoint.WSManVersion;
 import org.opennms.core.wsman.cxf.CXFWSManClientFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,7 +112,7 @@ public class WSManCli {
             
             if (arguments.isEmpty()) {
                 LOG.info("Enumerating and pulling on '{}'...", resourceUri);
-                List<Node> nodes = client.enumerateAndPull(resourceUri);
+                List<Node> nodes = client.enumerateAndPull(resourceUri, true);
                 LOG.info("Succesfully pulled {} nodes.", nodes.size());
 
                 // Dump the list of nodes to stdout
@@ -108,7 +122,7 @@ public class WSManCli {
             } else {
                 for (String wql : arguments) {
                     LOG.info("Enumerating and pulling on '{}' with '{}'...", resourceUri, wql);
-                    List<Node> nodes = client.enumerateAndPullUsingFilter(WSManConstants.XML_NS_WQL_DIALECT, wql, resourceUri);
+                    List<Node> nodes = client.enumerateAndPullUsingFilter(WSManConstants.XML_NS_WQL_DIALECT, wql, resourceUri, true);
                     LOG.info("Succesfully pulled {} nodes.", nodes.size());
 
                     // Dump the list of nodes to stdout

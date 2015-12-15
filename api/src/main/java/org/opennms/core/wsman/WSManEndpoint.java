@@ -1,16 +1,31 @@
+/*
+ * Copyright 2015, The OpenNMS Group
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may
+ * not use this file except in compliance with the License. You may obtain
+ * a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *     
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.opennms.core.wsman;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Objects;
 
+/**
+ * Used to define all the details on how to communicate
+ * with a particular WS-Man server.
+ *
+ * @author jwhite
+ */
 public class WSManEndpoint {
-
-    public static enum WSManVersion {
-        WSMAN_1_0,
-        WSMAN_1_1,
-        WSMAN_1_2
-    }
 
     private final URL url;
     private final String username;
@@ -64,7 +79,7 @@ public class WSManEndpoint {
        }
 
        public Builder withMaxElements(Integer maxElements) {
-           if (maxElements != null && maxElements < 1) {
+           if (maxElements == null || maxElements < 1) {
                throw new IllegalArgumentException("maxElements must be strictly positive");
            }
            this.maxElements = maxElements;
@@ -72,7 +87,7 @@ public class WSManEndpoint {
        }
 
        public Builder withMaxEnvelopeSize(Integer maxEnvelopeSize) {
-           if (maxEnvelopeSize != null && maxEnvelopeSize < 1) {
+           if (maxEnvelopeSize == null || maxEnvelopeSize < 1) {
                throw new IllegalArgumentException("maxEnvelopeSize must be strictly positive");
            }
            this.maxEnvelopeSize = maxEnvelopeSize;
@@ -117,13 +132,9 @@ public class WSManEndpoint {
     }
 
     public String toString() {
-        return com.google.common.base.Objects.toStringHelper(this)
-            .add("url", url)
-            .add("isBasicAuth", isBasicAuth())
-            .add("isStrictSSL", isStrictSSL())
-            .add("serverVersion", serverVersion)
-            .add("maxElements", maxElements)
-            .add("maxEnvelopeSize", maxEnvelopeSize)
-            .toString();
+        return String.format("WSManEndpoint[url='%s', isBasicAuth='%s', isStrictSSL='%s', "
+                + "serverVersion='%s',  maxElements='%s', maxEnvelopeSize='%s']",
+                url, isBasicAuth(), isStrictSSL(), serverVersion,
+                maxElements, maxEnvelopeSize);
     }
 }

@@ -16,18 +16,25 @@
 package org.opennms.core.wsman;
 
 /**
- * Generic WS-Man related exception.
+ * WS-Man protocol versions
  *
  * @author jwhite
  */
-public class WSManException extends RuntimeException {
-    private static final long serialVersionUID = -2894934806760355903L;
-
-    public WSManException(String message) {
-        super(message);
-    }
-
-    public WSManException(String message, Throwable cause) {
-        super(message, cause);
-    }
+public enum WSManVersion {
+    /**
+     * 12 Feb 2008
+     */
+    WSMAN_1_0,
+    /**
+     * 10 Sep 2012
+     */
+    WSMAN_1_1,
+    /**
+     * 3 Mar 2010
+     */
+    WSMAN_1_1_1,
+    /**
+     * 30 Sep 2014
+     */
+    WSMAN_1_2
 }
