@@ -19,6 +19,7 @@
   </modules>
 
   <properties>
+    <javaVersion>1.8</javaVersion>
     <cxfVersion>3.1.4</cxfVersion>
     <slf4jVersion>1.7.7</slf4jVersion>
     <guavaVersion>17.0</guavaVersion>
@@ -36,8 +37,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.3</version>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <source>${javaVersion}</source>
+          <target>${javaVersion}</target>
         </configuration>
       </plugin>
       <plugin>

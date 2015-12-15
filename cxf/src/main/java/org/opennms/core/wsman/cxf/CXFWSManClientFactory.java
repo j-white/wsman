@@ -18,6 +18,12 @@ package org.opennms.core.wsman.cxf;
 import org.opennms.core.wsman.WSManClientFactory;
 import org.opennms.core.wsman.WSManEndpoint;
 
+/**
+ * Used to instantiate a new  {@link CXFWSManClient} from a
+ * given {@link WSManEndpoint}.
+ *
+ * @author jwhite
+ */
 public class CXFWSManClientFactory implements WSManClientFactory {
 
     @Override

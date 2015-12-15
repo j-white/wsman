@@ -18,6 +18,12 @@ package org.opennms.core.wsman.openwsman;
 import org.opennms.core.wsman.WSManClientFactory;
 import org.opennms.core.wsman.WSManEndpoint;
 
+/**
+ * Used to instantiate a new  {@link OpenWSManClient} from a
+ * given {@link WSManEndpoint}.
+ *
+ * @author jwhite
+ */
 public class OpenWSManClientFactory implements WSManClientFactory {
 
     @Override

@@ -52,6 +52,18 @@ import com.google.common.collect.Lists;
 
 import org.openwsman.OpenWSManConstants;
 
+/**
+ * A WS-Man client implemented using OpenWSMan.
+ *
+ * OpenWSMan is a BSD 3 licensed WS-Man client/server implementation
+ * written in C++. It provides a number of language specific
+ * bindings, including those for Java, via SWIG.
+ *
+ * This class is not intended to be actually used, but rather
+ * to serve as a reference implementation.
+ *
+ * @author jwhite
+ */
 public class OpenWSManClient implements WSManClient {
 
     private final WSManEndpoint m_endpoint;

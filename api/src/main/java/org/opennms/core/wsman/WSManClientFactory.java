@@ -16,8 +16,8 @@
 package org.opennms.core.wsman;
 
 /**
- * Creates instances of {@link WSManClient} based
- * on the corresponding {@link WSManEndpoint} configuration.
+ * Used to instantiate a new  {@link WSManClient} from a
+ * given {@link WSManEndpoint}.
  *
  * @author jwhite
  */

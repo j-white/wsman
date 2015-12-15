@@ -65,6 +65,11 @@ import schemas.dmtf.org.wbem.wsman.v1.AttributableEmpty;
 import schemas.dmtf.org.wbem.wsman.v1.AttributablePositiveInteger;
 import schemas.dmtf.org.wbem.wsman.v1.ObjectFactory;
 
+/**
+ * A WS-Man client implemented using JAX-WS & CXF.
+ *
+ * @author jwhite
+ */
 public class CXFWSManClient implements WSManClient {
     private final static Logger LOG = LoggerFactory.getLogger(CXFWSManClient.class);
 
@@ -75,7 +80,6 @@ public class CXFWSManClient implements WSManClient {
     }
 
     public <ProxyServiceType> ProxyServiceType createProxyFor(Class<ProxyServiceType> serviceClass,
-            String resourceUri,
             Map<String, String> outTransformMap, Map<String, String> inTransformMap) {
         JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
         factory.setServiceClass(serviceClass);
@@ -140,10 +144,6 @@ public class CXFWSManClient implements WSManClient {
         maps.setFaultTo(ref);
         requestContext.put("javax.xml.ws.addressing.context", maps);
 
-        // Add WS-Man ResourceURI to the header
-        AddResourceURIInterceptor interceptor = new AddResourceURIInterceptor(resourceUri);
-        cxfClient.getOutInterceptors().add(interceptor);
-
         if (m_endpoint.getServerVersion() == WSManVersion.WSMAN_1_0) {
             // WS-Man 1.0 does not support the W3C WS-Addressing, so we need to change the namespace
             // "http://www.w3.org/2005/08/addressing" becomes "http://schemas.xmlsoap.org/ws/2004/08/addressing"
@@ -180,8 +180,14 @@ public class CXFWSManClient implements WSManClient {
         Map<String, String> outTransformMap = Maps.newHashMap();
         outTransformMap.put("{http://schemas.xmlsoap.org/ws/2004/09/enumeration}Filter", "{http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd}Filter");
 
-        return createProxyFor(EnumerationOperations.class, resourceUri,
-                outTransformMap, Maps.newHashMap());
+        EnumerationOperations enumerator = createProxyFor(EnumerationOperations.class, outTransformMap, Maps.newHashMap());
+        Client cxfClient = ClientProxy.getClient(enumerator);
+
+        // Add WS-Man ResourceURI to the header
+        WSManHeaderInterceptor interceptor = new WSManHeaderInterceptor(resourceUri);
+        cxfClient.getOutInterceptors().add(interceptor);
+
+        return enumerator;
     }
 
     private TransferOperations getTransferer(Map<String, String> selectors, String resourceUri) {
@@ -194,12 +200,11 @@ public class CXFWSManClient implements WSManClient {
         inTransformMap.put(String.format("{%s}%s", resourceUri, elementType),
                 "{http://schemas.xmlsoap.org/ws/2004/09/transfer}TransferElement");
 
-        TransferOperations transferer = createProxyFor(TransferOperations.class, resourceUri,
-                Maps.newHashMap(), inTransformMap);
+        TransferOperations transferer = createProxyFor(TransferOperations.class, Maps.newHashMap(), inTransformMap);
         Client cxfClient = ClientProxy.getClient(transferer);
 
-        // Add WS-Man ResourceURI to the header
-        AddSelectorSetInterceptor interceptor = new AddSelectorSetInterceptor(selectors);
+        // Add WS-Man ResourceURI and SelectorSet to the header
+        WSManHeaderInterceptor interceptor = new WSManHeaderInterceptor(resourceUri, selectors);
         cxfClient.getOutInterceptors().add(interceptor);
 
         return transferer;

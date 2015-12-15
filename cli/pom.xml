@@ -17,8 +17,8 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
+          <source>${javaVersion}</source>
+          <target>${javaVersion}</target>
         </configuration>
       </plugin>
       <plugin>
@@ -27,42 +27,42 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
-            <Bundle-RequiredExecutionEnvironment>JavaSE-1.8</Bundle-RequiredExecutionEnvironment>
+            <Bundle-RequiredExecutionEnvironment>JavaSE-${javaVersion}</Bundle-RequiredExecutionEnvironment>
           </instructions>
         </configuration>
       </plugin>
       <plugin>
-		  <groupId>org.apache.maven.plugins</groupId>
-		  <artifactId>maven-shade-plugin</artifactId>
-		  <executions>
-		    <execution>
-			<phase>package</phase>
-			<goals>
-				<goal>shade</goal>
-			</goals>
-			<configuration>
-			  <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-					<mainClass>org.opennms.core.wsman.WSManCli</mainClass>
-				</transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/spring.handlers</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/spring.schemas</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
-                  <resource>META-INF/cxf/bus-extensions.txt</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
-                  <resource>META-INF/wsdl.plugin.xml</resource>
-                </transformer>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-			  </transformers>
-			</configuration>
-		      </execution>
-		  </executions>
-		</plugin>
+       <groupId>org.apache.maven.plugins</groupId>
+       <artifactId>maven-shade-plugin</artifactId>
+       <executions>
+         <execution>
+           <phase>package</phase>
+           <goals>
+             <goal>shade</goal>
+           </goals>
+           <configuration>
+             <transformers>
+               <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                 <mainClass>org.opennms.core.wsman.WSManCli</mainClass>
+               </transformer>
+               <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                 <resource>META-INF/spring.handlers</resource>
+               </transformer>
+               <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                 <resource>META-INF/spring.schemas</resource>
+               </transformer>
+               <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                 <resource>META-INF/cxf/bus-extensions.txt</resource>
+               </transformer>
+               <transformer implementation="org.apache.maven.plugins.shade.resource.XmlAppendingTransformer">
+                 <resource>META-INF/wsdl.plugin.xml</resource>
+               </transformer>
+               <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+             </transformers>
+          </configuration>
+         </execution>
+       </executions>
+      </plugin>
     </plugins>
   </build>
 
