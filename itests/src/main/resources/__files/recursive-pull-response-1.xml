@@ -20,7 +20,6 @@
                <n1:TotalOutputPower>502</n1:TotalOutputPower>
             </n1:DCIM_PowerSupplyView>
          </wsen:Items>
-         <wsen:EndOfSequence />
       </wsen:PullResponse>
    </s:Body>
 </s:Envelope>

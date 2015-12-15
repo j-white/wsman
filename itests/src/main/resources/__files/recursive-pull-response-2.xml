@@ -13,7 +13,7 @@
          <wsen:Items>
             <n1:DCIM_PowerSupplyView>
                <n1:FirmwareVersion>04.15.00</n1:FirmwareVersion>
-               <n1:InputVoltage>120</n1:InputVoltage>
+               <n1:InputVoltage>121</n1:InputVoltage>
                <n1:InstanceID>PSU.Slot.1</n1:InstanceID>
                <n1:PrimaryStatus>1</n1:PrimaryStatus>
                <n1:RedundancyStatus>0</n1:RedundancyStatus>

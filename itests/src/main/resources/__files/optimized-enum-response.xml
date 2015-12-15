@@ -29,6 +29,7 @@
                <n1:Type>0</n1:Type>
             </n1:DCIM_PowerSupplyView>
          </wsman:Items>
+         <wsen:EndOfSequence />
          <wsen:EnumerationContext>53c58847-26a1-16a1-80d8-c115cfb5fe14</wsen:EnumerationContext>
       </wsen:EnumerateResponse>
    </s:Body>

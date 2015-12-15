@@ -53,11 +53,11 @@ import org.xmlsoap.schemas.ws._2004._09.enumeration.Enumerate;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerateResponse;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerationContextType;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.FilterType;
-import org.xmlsoap.schemas.ws._2004._09.enumeration.ItemListType;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.Pull;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;
 import org.xmlsoap.schemas.ws._2004._09.transfer.TransferElement;
 
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 import schemas.dmtf.org.wbem.wsman.v1.AnyListType;
@@ -283,11 +283,17 @@ public class CXFWSManClient implements WSManClient {
             throw new WSManException(String.format("Pull failed for context id: %s. See logs for details.", contextId));
         }
 
-        ItemListType itemList = pullResponse.getItems();
-        return itemList.getAny().stream()
-            .filter(o -> o instanceof org.w3c.dom.Node)
-            .map(o -> (Node)o)
-            .collect(Collectors.toList());
+        final List<Node> nodes = pullResponse.getItems().getAny().stream()
+                .filter(o -> o instanceof org.w3c.dom.Node)
+                .map(o -> (Node)o)
+                .collect(Collectors.toList());
+
+        if (recursive && pullResponse.getEndOfSequence() == null) {
+            // Recurse, since we haven't reached the end-of-sequence yet
+            nodes.addAll(pull(contextId, resourceUri, recursive));
+        }
+
+        return nodes;
     }
 
     @Override
@@ -297,24 +303,39 @@ public class CXFWSManClient implements WSManClient {
             throw new WSManException("Enumeration failed. See logs for details.");
         }
 
-        // FIXME: This is nasty and returns the first list, which could be anything
+        boolean endOfSequence = false;
+        List<Node> nodes = Lists.newArrayList();
+        // FIXME: This is nasty
         for (Object object : enumerateResponse.getAny()) {
             if (object instanceof JAXBElement) {
                 JAXBElement<?> el = (JAXBElement<?>)object;
-                Object value = el.getValue();
-                if (value instanceof AnyListType) {
-                    AnyListType itemList = (AnyListType)value;
-                    return itemList.getAny().stream()
-                            .filter(o -> o instanceof org.w3c.dom.Node)
-                            .map(o -> (Node)o)
-                            .collect(Collectors.toList());
+                if ("Items".equals(el.getName().getLocalPart())) {
+                    Object value = el.getValue();
+                    if (value instanceof AnyListType) {
+                        AnyListType itemList = (AnyListType)value;
+                        nodes = itemList.getAny().stream()
+                                .filter(o -> o instanceof org.w3c.dom.Node)
+                                .map(o -> (Node)o)
+                                .collect(Collectors.toList());
+                    }
+                } else if ("EndOfSequence".equals(el.getName().getLocalPart())) {
+                    endOfSequence = true;
+                }
+            } else if (object instanceof Node) {
+                Node node = (Node)object;
+                // NOTE: Can be in wsen or wsman namespaces
+                if ("EndOfSequence".equals(node.getLocalName())) {
+                    endOfSequence = true;
                 }
             }
         }
 
-        // Fallback to pulling
-        String contextId = (String)enumerateResponse.getEnumerationContext().getContent().get(0);
-        return pull(contextId, resourceUri, recursive);
+
+        if (!endOfSequence) {
+            String contextId = (String)enumerateResponse.getEnumerationContext().getContent().get(0);
+            nodes.addAll(pull(contextId, resourceUri, recursive));
+        }
+        return nodes;
     }
 
     @Override
@@ -324,24 +345,38 @@ public class CXFWSManClient implements WSManClient {
             throw new WSManException("Enumeration failed. See logs for details.");
         }
 
-        // FIXME: This is nasty and returns the first list, which could be anything
+        boolean endOfSequence = false;
+        List<Node> nodes = Lists.newArrayList();
+        // FIXME: This is nasty
         for (Object object : enumerateResponse.getAny()) {
             if (object instanceof JAXBElement) {
                 JAXBElement<?> el = (JAXBElement<?>)object;
-                Object value = el.getValue();
-                if (value instanceof AnyListType) {
-                    AnyListType itemList = (AnyListType)value;
-                    return itemList.getAny().stream()
-                            .filter(o -> o instanceof org.w3c.dom.Node)
-                            .map(o -> (Node)o)
-                            .collect(Collectors.toList());
+                if ("Items".equals(el.getName().getLocalPart())) {
+                    Object value = el.getValue();
+                    if (value instanceof AnyListType) {
+                        AnyListType itemList = (AnyListType)value;
+                        nodes = itemList.getAny().stream()
+                                .filter(o -> o instanceof org.w3c.dom.Node)
+                                .map(o -> (Node)o)
+                                .collect(Collectors.toList());
+                    }
+                } else if ("EndOfSequence".equals(el.getName().getLocalPart())) {
+                    endOfSequence = true;
+                }
+            } else if (object instanceof Node) {
+                Node node = (Node)object;
+                // NOTE: Can be in wsen or wsman namespaces
+                if ("EndOfSequence".equals(node.getLocalName())) {
+                    endOfSequence = true;
                 }
             }
         }
 
-        // Fallback to pulling
-        String contextId = (String)enumerateResponse.getEnumerationContext().getContent().get(0);
-        return pull(contextId, resourceUri, recursive);
+        if (!endOfSequence) {
+            String contextId = (String)enumerateResponse.getEnumerationContext().getContent().get(0);
+            nodes.addAll(pull(contextId, resourceUri, recursive));
+        }
+        return nodes;
     }
 
     @Override

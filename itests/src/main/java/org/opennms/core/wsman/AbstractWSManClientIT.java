@@ -22,7 +22,9 @@ import org.junit.Test;
 import org.opennms.core.wsman.WSManEndpoint;
 import org.w3c.dom.Node;
 
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
+import com.github.tomakehurst.wiremock.stubbing.Scenario;
 import com.mycila.xmltool.XMLDoc;
 import com.mycila.xmltool.XMLTag;
 
@@ -37,6 +39,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -58,7 +61,9 @@ import javax.xml.transform.stream.StreamSource;
 public abstract class AbstractWSManClientIT {
 
     @Rule
-    public WireMockRule wireMockRule = new WireMockRule(8089);
+    public WireMockRule wireMockRule = new WireMockRule(WireMockConfiguration.wireMockConfig()
+            .withRootDirectory(Paths.get("..", "itests", "src", "main", "resources").toString())
+            .dynamicPort());
 
     private WSManClient client;
 
@@ -71,7 +76,7 @@ public abstract class AbstractWSManClientIT {
 
     @Before
     public void setUp() throws MalformedURLException {
-        WSManEndpoint endpoint = new WSManEndpoint.Builder("http://127.0.0.1:8089/wsman")
+        WSManEndpoint endpoint = new WSManEndpoint.Builder(String.format("http://127.0.0.1:%d/wsman", wireMockRule.port()))
                 .withServerVersion(WSManVersion.WSMAN_1_0)
                 .build();
         client = getFactory().getClient(endpoint);
@@ -101,7 +106,7 @@ public abstract class AbstractWSManClientIT {
                     .withHeader("Content-Type", "Content-Type: application/soap+xml; charset=utf-8")
                     .withBodyFile("pull-response.xml")));
 
-        List<Node> nodes = client.pull("c6595ee1-2664-1664-801f-c115cfb5fe14", WSManConstants.CIM_ALL_AVAILABLE_CLASSES, true);
+        List<Node> nodes = client.pull("c6595ee1-2664-1664-801f-c115cfb5fe14", WSManConstants.CIM_ALL_AVAILABLE_CLASSES, false);
 
         dumpRequestsToStdout();
 
@@ -110,6 +115,36 @@ public abstract class AbstractWSManClientIT {
         XMLTag tag = XMLDoc.from(nodes.get(0), true);
         int inputVoltage = Integer.valueOf(tag.gotoChild("n1:InputVoltage").getText());
         assertEquals(120, inputVoltage);
+    }
+
+    @Test
+    public void canPullRecursively() throws InterruptedException {
+        stubFor(post(urlEqualTo("/wsman")).inScenario("Recursive pull")
+                .whenScenarioStateIs(Scenario.STARTED)
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", "Content-Type: application/soap+xml; charset=utf-8")
+                    .withBodyFile("recursive-pull-response-1.xml"))
+                .willSetStateTo("Pull #2"));
+
+        stubFor(post(urlEqualTo("/wsman")).inScenario("Recursive pull")
+                .whenScenarioStateIs("Pull #2")
+                .willReturn(aResponse()
+                    .withHeader("Content-Type", "Content-Type: application/soap+xml; charset=utf-8")
+                    .withBodyFile("recursive-pull-response-2.xml")));
+
+        List<Node> nodes = client.pull("c6595ee1-2664-1664-801f-c115cfb5fe14", WSManConstants.CIM_ALL_AVAILABLE_CLASSES, true);
+
+        dumpRequestsToStdout();
+
+        assertEquals(2, nodes.size());
+
+        XMLTag tag = XMLDoc.from(nodes.get(0), true);
+        int inputVoltage = Integer.valueOf(tag.gotoChild("n1:InputVoltage").getText());
+        assertEquals(120, inputVoltage);
+
+        tag = XMLDoc.from(nodes.get(1), true);
+        inputVoltage = Integer.valueOf(tag.gotoChild("n1:InputVoltage").getText());
+        assertEquals(121, inputVoltage);
     }
 
     @Test
@@ -122,7 +157,7 @@ public abstract class AbstractWSManClientIT {
         List<Node> nodes = client.enumerateAndPullUsingFilter(WSManConstants.XML_NS_WQL_DIALECT,
                 "select DeviceDescription,PrimaryStatus,TotalOutputPower,InputVoltage,Range1MaxInputPower,FirmwareVersion,RedundancyStatus from DCIM_PowerSupplyView where DetailedState != 'Absent' and PrimaryStatus != 0",
                 WSManConstants.CIM_ALL_AVAILABLE_CLASSES,
-                true);
+                false);
 
         dumpRequestsToStdout();
 
