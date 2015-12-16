@@ -59,7 +59,7 @@ public class WSManCli {
     private String password;
 
     @Option(name="-strictSSL", usage="ssl certificate verification")
-    private boolean strictSSL;
+    private boolean strictSSL = false;
 
     @Option(name="-o", usage="operation")
     WSManOperation operation = WSManOperation.ENUM;
@@ -68,13 +68,16 @@ public class WSManCli {
     private String resourceUri = WSManConstants.CIM_ALL_AVAILABLE_CLASSES;
 
     @Option(name="-w", usage="server version")
-    WSManVersion serverVersion = WSManVersion.WSMAN_1_2;
+    private WSManVersion serverVersion = WSManVersion.WSMAN_1_2;
 
-    @Option(name="-d", usage="logging level")
-    StandardLevel loggingLevel = StandardLevel.INFO;
+    @Option(name="-v", usage="logging level")
+    private StandardLevel logLevel = StandardLevel.INFO;
+
+    @Option(name="-vvv", usage="log request and responses")
+    private boolean logRequests = false;
 
     @Option(name="-s", handler=MapOptionHandler.class)
-    Map<String,String> selectors;
+    private Map<String,String> selectors;
 
     @Argument
     private List<String> arguments = new ArrayList<String>();
@@ -101,7 +104,7 @@ public class WSManCli {
             return;
         }
 
-        updateLoggingLevel(loggingLevel);
+        setupLogging();
 
         URL url;
         try {
@@ -113,7 +116,8 @@ public class WSManCli {
 
         WSManEndpoint.Builder builder = new WSManEndpoint.Builder(url)
                 .withStrictSSL(strictSSL)
-                .withServerVersion(serverVersion);
+                .withServerVersion(serverVersion)
+                .withMaxElements(100);
         if (username != null && password != null) {
             builder.withBasicAuth(username, password);
         }
@@ -149,11 +153,22 @@ public class WSManCli {
         }
     }
 
-    private static void updateLoggingLevel(StandardLevel level) {
+    private void setupLogging() {
+        Level level = Level.getLevel(logLevel.name());
         LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
         Configuration config = ctx.getConfiguration();
+        // Setup the root logger to the requested log level
         LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
-        loggerConfig.setLevel(Level.getLevel(level.name()));
+        loggerConfig.setLevel(level);
+        // Dump the requests/responses when requested
+        if (logRequests) {
+            loggerConfig = config.getLoggerConfig("org.apache.cxf.services");
+            if (level.isLessSpecificThan(Level.INFO)) {
+                loggerConfig.setLevel(level);
+            } else {
+                loggerConfig.setLevel(Level.INFO);
+            }
+        }
         ctx.updateLoggers();
     }
 

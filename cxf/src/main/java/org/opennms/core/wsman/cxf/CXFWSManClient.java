@@ -30,6 +30,8 @@ import org.apache.cxf.binding.soap.SoapBindingConstants;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.frontend.ClientProxy;
+import org.apache.cxf.interceptor.LoggingInInterceptor;
+import org.apache.cxf.interceptor.LoggingOutInterceptor;
 import org.apache.cxf.interceptor.transform.TransformInInterceptor;
 import org.apache.cxf.interceptor.transform.TransformOutInterceptor;
 import org.apache.cxf.jaxws.JaxWsProxyFactoryBean;
@@ -342,6 +344,15 @@ public class CXFWSManClient implements WSManClient {
         Map<String, List<String>> headers = Maps.newHashMap();
         headers.put(CONTENT_TYPE_HEADER, Collections.singletonList(MEDIA_TYPE_SOAP_UTF8));
         requestContext.put(Message.PROTOCOL_HEADERS, headers);
+
+        // Log incoming and outgoing requests
+        LoggingInInterceptor loggingInInterceptor = new LoggingInInterceptor();
+        loggingInInterceptor.setPrettyLogging(true);
+        cxfClient.getInInterceptors().add(loggingInInterceptor);
+ 
+        LoggingOutInterceptor loggingOutInterceptor = new LoggingOutInterceptor();
+        loggingOutInterceptor.setPrettyLogging(true);
+        cxfClient.getOutInterceptors().add(loggingOutInterceptor);
 
         return proxyService;
     }

@@ -2,10 +2,14 @@
 <Configuration status="WARN">
     <Appenders>
         <Console name="console" target="SYSTEM_OUT">
-            <PatternLayout pattern="[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n"/>
+            <PatternLayout pattern="[%-5level] %c %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %c{1} - %msg%n"/>
         </Console>
     </Appenders>
     <Loggers>
+        <logger name="org.apache.cxf.wsdl.service.factory" level="WARN" />
+        <logger name="org.apache.cxf.services" level="WARN" additivity="false">
+            <AppenderRef ref="console"/>
+        </logger>
         <Root level="INFO" additivity="false">
             <AppenderRef ref="console"/>
         </Root>
