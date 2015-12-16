@@ -11,3 +11,5 @@ target
 .project
 java/bin/
 *.swp
+
+dependency-reduced-pom.xml

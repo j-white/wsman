@@ -23,8 +23,8 @@ import schemas.dmtf.org.wbem.wsman.v1.AnyListType;
 /**
  * Utility functions for manipulating WS-Man specific types.
  *
- * If any of these function encounter anything unexpected,
- * they should throw a {@link WSManException}.
+ * These functions should be very strict, and a {@link WSManException}
+ * should be thrown if they encounter anything unexpected.
  *
  * @author jwhite
  */

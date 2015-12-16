@@ -21,6 +21,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.spi.StandardLevel;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -33,10 +39,15 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import wiremock.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 
 public class WSManCli {
     private static Logger LOG = LoggerFactory.getLogger(WSManCli.class);
+
+    public static enum WSManOperation {
+        GET,
+        ENUM
+    }
 
     @Option(name="-r", usage="remote url", metaVar="url", required=true)
     private String remoteUrl;
@@ -50,11 +61,6 @@ public class WSManCli {
     @Option(name="-strictSSL", usage="ssl certificate verification")
     private boolean strictSSL;
 
-    public static enum WSManOperation {
-        GET,
-        ENUM
-    }
-
     @Option(name="-o", usage="operation")
     WSManOperation operation = WSManOperation.ENUM;
 
@@ -63,6 +69,9 @@ public class WSManCli {
 
     @Option(name="-w", usage="server version")
     WSManVersion serverVersion = WSManVersion.WSMAN_1_2;
+
+    @Option(name="-d", usage="logging level")
+    StandardLevel loggingLevel = StandardLevel.INFO;
 
     @Option(name="-s", handler=MapOptionHandler.class)
     Map<String,String> selectors;
@@ -91,6 +100,8 @@ public class WSManCli {
             e.printStackTrace();
             return;
         }
+
+        updateLoggingLevel(loggingLevel);
 
         URL url;
         try {
@@ -137,7 +148,15 @@ public class WSManCli {
             dumpNodeToStdout(node);
         }
     }
-    
+
+    private static void updateLoggingLevel(StandardLevel level) {
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+        loggerConfig.setLevel(Level.getLevel(level.name()));
+        ctx.updateLoggers();
+    }
+
     private static void dumpNodeToStdout(Node node) {
         System.out.printf("%s (%s)\n", node.getLocalName(), node.getNamespaceURI());
         NodeList children = node.getChildNodes();
