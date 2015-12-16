@@ -2,19 +2,38 @@ package org.opennms.core.wsman.cxf;
 
 import java.net.URI;
 import java.util.List;
-import java.util.stream.Collectors;
 
+import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
+import javax.xml.bind.JAXBException;
+import javax.xml.namespace.QName;
+import javax.xml.transform.dom.DOMResult;
 
+import org.opennms.core.wsman.WSManConstants;
 import org.opennms.core.wsman.WSManException;
+import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerateResponse;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerationContextType;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.PullResponse;
+import org.xmlsoap.schemas.ws._2004._09.transfer.TransferElement;
 
 import schemas.dmtf.org.wbem.wsman.v1.AnyListType;
 
+/**
+ * Utility functions for manipulating WS-Man specific types.
+ *
+ * If any of these function encounter anything unexpected,
+ * they should throw a {@link WSManException}.
+ *
+ * @author jwhite
+ */
 public class TypeUtils {
+
+    private final static QName WSEN_Items_QNAME = new QName(WSManConstants.XML_NS_WS_2004_09_ENUMERATION, "Items");
+    private final static QName WSEN_EndOfSequence_QNAME = new QName(WSManConstants.XML_NS_WS_2004_09_ENUMERATION, "EndOfSequence");
+    private final static QName WSMAN_Items_QNAME = new QName(WSManConstants.XML_NS_DMTF_WSMAN_V1, "Items");
+    private final static QName WSMAN_EndOfSequence_QNAME = new QName(WSManConstants.XML_NS_DMTF_WSMAN_V1, "EndOfSequence");
 
     protected static String getContextIdFrom(EnumerateResponse response) {
         // A valid response must always include the EnumerationContext element
@@ -52,31 +71,45 @@ public class TypeUtils {
         }
     }
 
+    /**
+     * Retrieves the list of items from the given response, adding them to the given
+     * list and returns true if the response contains an 'end-of-sequence' marker.
+     */
     protected static boolean getItemsFrom(EnumerateResponse response, List<Node> items) {
         boolean endOfSequence = false;
         for (Object object : response.getAny()) {
             if (object instanceof JAXBElement) {
                 JAXBElement<?> el = (JAXBElement<?>)object;
-                if ("Items".equals(el.getName().getLocalPart())) {
-                    Object value = el.getValue();
-                    if (value instanceof AnyListType) {
-                        AnyListType itemList = (AnyListType)value;
-                        items.addAll(itemList.getAny().stream()
-                                .filter(o -> o instanceof org.w3c.dom.Node)
-                                .map(o -> (Node)o)
-                                .collect(Collectors.toList()));
+                if (WSEN_Items_QNAME.equals(el.getName()) || WSMAN_Items_QNAME.equals(el.getName())) {
+                    if (el.isNil()) {
+                        // No items
+                    } else if (el.getValue() instanceof AnyListType) {
+                        // 0+ items
+                        AnyListType itemList = (AnyListType)el.getValue();
+                        for (Object item : itemList.getAny()) {
+                            if (item instanceof Node) {
+                                Node node = (Node)item;
+                                items.add(node);
+                            } else {
+                                throw new WSManException(String.format("Unsupported element in EnumerateResponse: %s", object));
+                            }
+                        }
+                    } else {
+                        throw new WSManException(String.format("Unsupported value in EnumerateResponse Items: %s of type: %s",
+                                el.getValue(), el.getValue().getClass()));
                     }
-                } else if ("EndOfSequence".equals(el.getName().getLocalPart())) {
+                } else if (WSEN_EndOfSequence_QNAME.equals(el.getName()) || WSMAN_EndOfSequence_QNAME.equals(el.getName())) {
                     endOfSequence = true;
                 } else {
-                    throw new WSManException(String.format("Unsupported element in EnumerateResponse: %s", object));
+                    throw new WSManException(String.format("Unsupported element in EnumerateResponse: %s with name: %s", el, el.getName()));
                 }
             } else if (object instanceof Node) {
                 Node node = (Node)object;
-                if ("EndOfSequence".equals(node.getLocalName())) {
+                if ((WSEN_EndOfSequence_QNAME.getNamespaceURI().equals(node.getNamespaceURI()) && WSEN_EndOfSequence_QNAME.getLocalPart().equals(node.getLocalName())) ||
+                        (WSMAN_EndOfSequence_QNAME.getNamespaceURI().equals(node.getNamespaceURI()) && WSMAN_EndOfSequence_QNAME.getLocalPart().equals(node.getLocalName()))) {
                     endOfSequence = true;
                 } else {
-                    throw new WSManException(String.format("Unsupported node in EnumerateResponse: %s", node));
+                    throw new WSManException(String.format("Unsupported node in EnumerateResponse: %s with namespace: %s", node, node.getNamespaceURI()));
                 }
             } else {
                 throw new WSManException(String.format("Unsupported element in EnumerateResponse: %s, with type: %s",
@@ -86,6 +119,35 @@ public class TypeUtils {
         return endOfSequence;
     }
 
+    protected static boolean getItemsFrom(PullResponse response, List<Node> items) {
+        for (Object item : response.getItems().getAny()) {
+            if (item instanceof Node) {
+                items.add((Node)item);
+            } else {
+                throw new WSManException(String.format("The pull response contains an unsupported item %s of type %s",
+                        item, item != null ? item.getClass() : null));
+            }
+        }
+        return response.getEndOfSequence() != null;
+    }
+
+    protected static Node transferElementToNode(TransferElement el, String namespaceURI, String qualifiedName) {
+        try {
+            // Marshall the transfer element back to a DOM Node
+            DOMResult domResult = new DOMResult();
+            JAXBContext context = JAXBContext.newInstance(el.getClass());
+            context.createMarshaller().marshal(el, domResult);
+
+            // Convert the node back to it's original type
+            Document doc = (Document)domResult.getNode();
+            Node node = doc.getFirstChild();
+            doc.renameNode(node, namespaceURI, qualifiedName);
+            return doc.getFirstChild();
+        } catch (JAXBException e) {
+            throw new WSManException("XML serialization failed.", e);
+        }
+    }
+
     protected static String getElementTypeFromResourceUri(String resourceUri) {
         String elementType = null;
         try {
@@ -93,7 +155,7 @@ public class TypeUtils {
             String path = uri.getPath();
             elementType = path.substring(path.lastIndexOf('/') + 1);
         } catch (Throwable t) {
-            throw new WSManException("t", t);
+            throw new WSManException("Failed to determine the element type from resource uri: " + resourceUri, t);
         }
         return elementType;
     }

@@ -21,7 +21,10 @@ import java.util.Objects;
 
 /**
  * Used to define all the details on how to communicate
- * with a particular WS-Man server.
+ * with a particular WS-Man endpoint.
+ *
+ * These objects are immutable and can be constructed
+ * using the fluent API.
  *
  * @author jwhite
  */

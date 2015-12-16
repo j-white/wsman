@@ -42,6 +42,7 @@ public class TestUtils {
                         .withStrictSSL(false)
                         .withServerVersion(WSManVersion.WSMAN_1_0)
                         .withMaxElements(25)
+                        .withMaxEnvelopeSize(1024*1024)
                         .build();
         }
     }

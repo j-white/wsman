@@ -23,10 +23,7 @@ import java.util.Objects;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
-import javax.xml.transform.dom.DOMResult;
 import javax.xml.ws.BindingProvider;
 
 import org.apache.cxf.binding.soap.SoapBindingConstants;
@@ -43,6 +40,8 @@ import org.apache.cxf.ws.addressing.AddressingProperties;
 import org.apache.cxf.ws.addressing.AttributedURIType;
 import org.apache.cxf.ws.addressing.EndpointReferenceType;
 import org.apache.cxf.ws.addressing.JAXWSAConstants;
+import org.apache.cxf.ws.addressing.WSAddressingFeature;
+import org.apache.cxf.ws.addressing.WSAddressingFeature.AddressingResponses;
 import org.apache.cxf.ws.addressing.soap.VersionTransformer;
 import org.opennms.core.wsman.WSManClient;
 import org.opennms.core.wsman.WSManConstants;
@@ -51,7 +50,6 @@ import org.opennms.core.wsman.WSManException;
 import org.opennms.core.wsman.WSManVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.Enumerate;
 import org.xmlsoap.schemas.ws._2004._09.enumeration.EnumerateResponse;
@@ -65,23 +63,19 @@ import com.google.common.collect.Maps;
 
 import schemas.dmtf.org.wbem.wsman.v1.AttributableEmpty;
 import schemas.dmtf.org.wbem.wsman.v1.AttributablePositiveInteger;
-import schemas.dmtf.org.wbem.wsman.v1.ObjectFactory;
+import schemas.dmtf.org.wbem.wsman.v1.MaxEnvelopeSizeType;
 
 /**
  * A WS-Man client implemented using JAX-WS & CXF.
  *
- * Since this a generic client, intended to be used against
- * any WS-Man compliant server, we are often forced to operate
- * against unstructured XML entities.
- *
- * For this reason, we choose to fail and throw a {@link WSManException}
- * when we hit some case that is not currently supported, instead
- * of issuing a warning.
- *
  * @author jwhite
  */
 public class CXFWSManClient implements WSManClient {
-    private final static Logger LOG = LoggerFactory.getLogger(CXFWSManClient.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CXFWSManClient.class);
+    private static final String CONTENT_TYPE_HEADER = "Content-Type";
+    private static final String MEDIA_TYPE_SOAP_UTF8 = "application/soap+xml;charset=UTF-8";
+    private static final org.apache.cxf.ws.addressing.ObjectFactory WSA_OBJECT_FACTORY = new org.apache.cxf.ws.addressing.ObjectFactory();
+    private static final schemas.dmtf.org.wbem.wsman.v1.ObjectFactory WSMAN_OBJECT_FACTORY = new schemas.dmtf.org.wbem.wsman.v1.ObjectFactory();
 
     private final WSManEndpoint m_endpoint;
 
@@ -113,7 +107,7 @@ public class CXFWSManClient implements WSManClient {
         // by the annotated interface, but these are subject to change for every call we make
         Map<String, String> inTransformMap = Maps.newHashMap();
         inTransformMap.put(String.format("{%s}%s", resourceUri, elementType),
-                "{http://schemas.xmlsoap.org/ws/2004/09/transfer}TransferElement");
+                "{" + WSManConstants.XML_NS_WS_2004_09_TRANSFER + "}TransferElement");
 
         // Create the proxy
         TransferOperations transferer = createProxyFor(TransferOperations.class, Maps.newHashMap(), inTransformMap);
@@ -139,18 +133,25 @@ public class CXFWSManClient implements WSManClient {
         }
 
         // Optionally add the optimize enumeration element to the request
-        ObjectFactory factory = new ObjectFactory();
         if (optimized) {
             // Request an optimized response
-            JAXBElement<AttributableEmpty> optimizeEnumeration = factory.createOptimizeEnumeration(new AttributableEmpty());
+            JAXBElement<AttributableEmpty> optimizeEnumeration = WSMAN_OBJECT_FACTORY.createOptimizeEnumeration(new AttributableEmpty());
             enumerate.getAny().add(optimizeEnumeration);
         }
 
-        // Optionally specific the maximum number of elements to return
+        // Optionally specify the max envelope size
+        if (m_endpoint.getMaxEnvelopeSize() != null) {
+            MaxEnvelopeSizeType maxEnvelopeSizeValue = WSMAN_OBJECT_FACTORY.createMaxEnvelopeSizeType();
+            maxEnvelopeSizeValue.setValue(BigInteger.valueOf(m_endpoint.getMaxEnvelopeSize()));
+            JAXBElement<MaxEnvelopeSizeType> maxEnvelopeSize = WSMAN_OBJECT_FACTORY.createMaxEnvelopeSize(maxEnvelopeSizeValue);
+            enumerate.getAny().add(maxEnvelopeSize);
+        }
+
+        // Optionally specify the maximum number of elements to return
         if (m_endpoint.getMaxElements() != null) {
             AttributablePositiveInteger maxElementsValue = new AttributablePositiveInteger();
             maxElementsValue.setValue(BigInteger.valueOf(m_endpoint.getMaxElements()));
-            JAXBElement<AttributablePositiveInteger> maxElements = factory.createMaxElements(maxElementsValue);
+            JAXBElement<AttributablePositiveInteger> maxElements = WSMAN_OBJECT_FACTORY.createMaxElements(maxElementsValue);
             enumerate.getAny().add(maxElements);
         }
 
@@ -200,30 +201,23 @@ public class CXFWSManClient implements WSManClient {
         enumContext.getContent().add(contextId);
         pull.setEnumerationContext(enumContext);
 
-        // Optionally specific the maximum number of elements to return
+        // Optionally specify the maximum number of elements to return
         if (m_endpoint.getMaxElements() != null) {
             pull.setMaxElements(BigInteger.valueOf(m_endpoint.getMaxElements()));
         }
 
         // Issue the pull
-        PullResponse pullResponse = getEnumerator(resourceUri).pull(pull);
-        if (pullResponse == null) {
+        PullResponse response = getEnumerator(resourceUri).pull(pull);
+        if (response == null) {
             throw new WSManException(String.format("Pull failed for context id: %s. See logs for details.", contextId));
         }
 
         // Collect the results
-        for (Object item : pullResponse.getItems().getAny()) {
-            if (item instanceof Node) {
-                nodes.add((Node)item);
-            } else {
-                throw new WSManException(String.format("The pull response contains an unsupported item %s of type %s",
-                        item, item != null ? item.getClass() : null));
-            }
-        }
+        boolean endOfSequence = TypeUtils.getItemsFrom(response, nodes);
+        String nextContextId = TypeUtils.getContextIdFrom(response);
 
-        String nextContextId = TypeUtils.getContextIdFrom(pullResponse);
         // If we're pulling recursively, and we haven't hit the last element, continue pulling
-        if (recursive && pullResponse.getEndOfSequence() == null) {
+        if (recursive && !endOfSequence) {
             return pull(nextContextId, resourceUri, nodes, recursive);
         }
 
@@ -249,22 +243,7 @@ public class CXFWSManClient implements WSManClient {
             // Note that fault should be thrown if the object doesn't exist
             throw new WSManException("Get failed. See logs for details.");
         }
-
-        // Convert the TransferElement to a generic node
-        DOMResult domResult = new DOMResult();
-        JAXBContext context;
-        try {
-            context = JAXBContext.newInstance(transferElement.getClass());
-            context.createMarshaller().marshal(transferElement, domResult);
-
-            // Convert the transfer element back to it's original type
-            Document doc = (Document)domResult.getNode();
-            Node node = doc.getFirstChild();
-            doc.renameNode(node, resourceUri, elementType);
-            return doc.getFirstChild();
-        } catch (JAXBException e) {
-            throw new WSManException("XML serialization failed.", e);
-        }
+        return TypeUtils.transferElementToNode(transferElement, resourceUri, elementType);
     }
 
     /**
@@ -276,6 +255,10 @@ public class CXFWSManClient implements WSManClient {
         JaxWsProxyFactoryBean factory = new JaxWsProxyFactoryBean();
         factory.setServiceClass(serviceClass);
         factory.setAddress(m_endpoint.getUrl().toExternalForm());
+
+        WSAddressingFeature feature = new WSAddressingFeature();
+        feature.setResponses(AddressingResponses.ANONYMOUS);
+        factory.getFeatures().add(feature);
 
         // Force the client to use SOAP v1.2, as per:
         // R13.1-1: A service shall at least receive and send SOAP 1.2 SOAP Envelopes.
@@ -329,20 +312,13 @@ public class CXFWSManClient implements WSManClient {
         }
 
         // Set the Reply-To header to the anonymous address
-        AddressingProperties maps = new AddressingProperties();
-        EndpointReferenceType ref = new EndpointReferenceType();
-        AttributedURIType add = new AttributedURIType();
-        add.setValue(VersionTransformer.Names200408.WSA_ANONYMOUS_ADDRESS);
-        ref.setAddress(add);
-        maps.setReplyTo(ref);
-        maps.setFaultTo(ref);
-        requestContext.put("javax.xml.ws.addressing.context", maps);
+        requestContext.put(JAXWSAConstants.CLIENT_ADDRESSING_PROPERTIES, createAddressingPropertiesMap());
 
         if (m_endpoint.getServerVersion() == WSManVersion.WSMAN_1_0) {
             // WS-Man 1.0 does not support the W3C WS-Addressing, so we need to change the namespace
             // "http://www.w3.org/2005/08/addressing" becomes "http://schemas.xmlsoap.org/ws/2004/08/addressing"
-            outTransformMap.put(String.format("{%s}*", JAXWSAConstants.NS_WSA),
-                    String.format("{%s}*", WSManConstants.XML_NS_WS_2004_08_ADDRESSING));
+            outTransformMap.put("{" + JAXWSAConstants.NS_WSA + "}*",
+                                "{" + WSManConstants.XML_NS_WS_2004_08_ADDRESSING + "}*");
         }
 
         // Optionally apply any in and/or out transformers
@@ -362,11 +338,22 @@ public class CXFWSManClient implements WSManClient {
         // By default, CXF will add the action to the Content-Type header, generating something like:
         // Content-Type: application/soap+xml; action="http://schemas.xmlsoap.org/ws/2004/09/enumeration/Enumerate"
         // Windows Server 2008 barfs on the action=".*" attribute and none of the other servers
-        // seem to care of it's there or not, so we remove it.
+        // seem to care whether it's there or not, so we remove it.
         Map<String, List<String>> headers = Maps.newHashMap();
-        headers.put("Content-Type", Collections.singletonList("application/soap+xml;charset=UTF-8"));
+        headers.put(CONTENT_TYPE_HEADER, Collections.singletonList(MEDIA_TYPE_SOAP_UTF8));
         requestContext.put(Message.PROTOCOL_HEADERS, headers);
 
         return proxyService;
+    }
+ 
+    private static AddressingProperties createAddressingPropertiesMap() {
+        AddressingProperties maps = new AddressingProperties();
+        AttributedURIType address = WSA_OBJECT_FACTORY.createAttributedURIType();
+        EndpointReferenceType ref = WSA_OBJECT_FACTORY.createEndpointReferenceType();
+        address.setValue(VersionTransformer.Names200408.WSA_ANONYMOUS_ADDRESS);
+        ref.setAddress(address);
+        maps.setReplyTo(ref);
+        maps.setFaultTo(ref);
+        return maps;
     }
 }

@@ -72,7 +72,7 @@ public interface WSManClient {
     /**
      * Optimized version of the enumerate and pull operations.
      *
-     * The implementation should attempt to consolidate the calls, using optimized enumeration.
+     * The implementation should attempt to consolidate the calls using optimized enumeration.
      *
      * @param resourceUri
      * @param nodes existing list in which the pulled elements will be added
@@ -85,7 +85,7 @@ public interface WSManClient {
     /**
      * Optimized version of the enumerate and pull operations.
      *
-     * The implementation should attempt to consolidate the calls, using optimized enumeration.
+     * The implementation should attempt to consolidate the calls using optimized enumeration.
      *
      * @param resourceUri
      * @param dialect
